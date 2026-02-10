@@ -36,7 +36,8 @@
     "reset": "초기화",
     "save": "저장",
     "send": "보내기",
-    "addItem": "항목 추가"
+    "addItem": "항목 추가",
+    "reply": "답장"
   },
   "form": {
     "notSpecified": "지정되지 않음",
@@ -59,6 +60,7 @@
     "taskCompleted": "작업 완료",
     "ran": "실행함",
     "tool": "도구",
+    "thinking": "생각 중",
     "toolSummary": {
       "read": "{{path}} 읽기",
       "searched": "\"{{query}}\" 검색",
@@ -67,7 +69,10 @@
       "createdTask": "작업 생성: {{description}}",
       "todoOperation": "{{operation}} 할 일"
     },
-    "fixScript": "스크립트 수정"
+    "fixScript": "스크립트 수정",
+    "subagent": {
+      "defaultType": "서브에이전트"
+    }
   },
   "language": {
     "browserDefault": "브라우저 기본값"
@@ -91,11 +96,18 @@
     "menuItem": "조직",
     "loadingPlaceholder": "조직 로딩 중...",
     "selectPlaceholder": "조직 선택",
-    "currentBadge": " (현재)"
+    "currentBadge": " (현재)",
+    "organizations": "조직",
+    "createOrganization": "조직 만들기",
+    "orgSettings": "조직 설정",
+    "migrate": "마이그레이션"
   },
   "navbar": {
     "tryNewUI": "새로운 UI 사용해보기"
   },
+  "ok": "확인",
+  "error": "오류",
+  "signIn": "로그인",
   "signOut": "로그아웃",
   "devMode": {
     "banner": "개발 모드 - 개발 빌드입니다"
@@ -196,7 +208,9 @@
   "commandBar": {
     "noResults": "결과를 찾을 수 없습니다.",
     "back": "뒤로",
-    "defaultPlaceholder": "명령어를 입력하거나 검색..."
+    "defaultPlaceholder": "명령어를 입력하거나 검색...",
+    "selectBranch": "Select Branch",
+    "selectBranchFor": "Select Branch for {{repoName}}"
   },
   "chatBox": {
     "variants": "변형",
@@ -236,7 +250,64 @@
     "tags": "태그",
     "files": "파일",
     "commands": "명령어",
+    "chooseRepo": "저장소 선택",
+    "selectedRepo": "선택된 저장소: {{repoName}}",
+    "missingRepo": "선택한 저장소를 더 이상 사용할 수 없습니다.",
     "noTagsOrFiles": "태그 또는 파일을 찾을 수 없습니다",
     "noCommands": "이 에이전트에 사용 가능한 명령어가 없습니다."
+  },
+  "kanban": {
+    "noStatusesFound": "이 프로젝트의 상태를 찾을 수 없습니다",
+    "noVisibleStatuses": "모든 상태가 숨겨져 있습니다. 표시 설정을 사용하거나 다른 탭으로 전환하여 이슈를 확인하세요.",
+    "noProjectFound": "프로젝트를 찾을 수 없습니다",
+    "noOrganizationFound": "조직을 찾을 수 없습니다",
+    "unassigned": "미할당",
+    "noTagsAvailable": "사용 가능한 태그 없음",
+    "createNewIssue": "새 이슈 만들기",
+    "createNewTag": "새 태그 만들기",
+    "searchTags": "태그 검색...",
+    "selectColorFor": "색상 선택:",
+    "createTag": "만들기",
+    "filesCount": "{{count}}개 파일",
+    "noPrCreated": "PR이 생성되지 않음",
+    "noCommentsYet": "아직 댓글이 없습니다",
+    "createdBy": "작성자",
+    "comments": "댓글",
+    "enterCommentPlaceholder": "댓글을 입력하세요...",
+    "subIssues": "하위 이슈",
+    "noSubIssues": "하위 이슈 없음",
+    "markIndependentIssue": "독립 이슈로 표시",
+    "parentIssue": "상위",
+    "subIssueIndicator": "↳",
+    "showSubIssues": "하위 이슈 표시",
+    "viewTabs": {
+      "active": "활성",
+      "all": "전체"
+    },
+    "loginRequired": {
+      "title": "로그인 필요",
+      "description": "이 프로젝트를 보려면 로그인하세요.",
+      "action": "로그인"
+    }
+  },
+  "createMode": {
+    "headings": {
+      "repoStep": "어떤 리포지토리에서 작업하시겠어요?",
+      "chatStep": "무엇을 작업하시겠어요?"
+    },
+    "repoPicker": {
+      "actions": {
+        "recent": "최근",
+        "browse": "찾아보기",
+        "create": "생성"
+      }
+    }
+  },
+  "syncError": {
+    "networkErrors": "네트워크 오류",
+    "streamsAffected": "{{count}}개 스트림이 영향을 받음",
+    "streamsAffected_other": "{{count}}개 스트림이 영향을 받음",
+    "status": "(상태 {{status}})",
+    "refreshPage": "페이지 새로고침"
   }
 }

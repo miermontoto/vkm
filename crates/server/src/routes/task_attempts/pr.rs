@@ -1,11 +1,13 @@
 use std::path::PathBuf;
 
+use api_types::{PullRequestStatus, UpsertPullRequestRequest};
 use axum::{
     Extension, Json,
     extract::{Query, State},
     response::Json as ResponseJson,
 };
 use db::models::{
+    coding_agent_turn::CodingAgentTurn,
     execution_process::{ExecutionProcess, ExecutionProcessRunReason},
     merge::{Merge, MergeStatus},
     repo::{Repo, RepoError},
@@ -19,13 +21,15 @@ use executors::actions::{
     ExecutorAction, ExecutorActionType, coding_agent_follow_up::CodingAgentFollowUpRequest,
     coding_agent_initial::CodingAgentInitialRequest,
 };
+use git::{GitCliError, GitServiceError};
 use serde::{Deserialize, Serialize};
 use services::services::{
+    config::DEFAULT_PR_DESCRIPTION_PROMPT,
     container::ContainerService,
-    git::{GitCliError, GitServiceError},
     git_host::{
         self, CreatePrRequest, GitHostError, GitHostProvider, ProviderKind, UnifiedPrComment,
     },
+    remote_sync,
 };
 use ts_rs::TS;
 use utils::response::ApiResponse;
@@ -88,18 +92,6 @@ pub struct GetPrCommentsQuery {
     pub repo_id: Uuid,
 }
 
-pub const DEFAULT_PR_DESCRIPTION_PROMPT: &str = r#"Update the PR that was just created with a better title and description.
-The PR number is #{pr_number} and the URL is {pr_url}.
-
-Analyze the changes in this branch and write:
-1. A concise, descriptive title that summarizes the changes"
-2. A detailed description that explains:
-   - What changes were made
-   - Why they were made (based on the task context)
-   - Any important implementation details
-
-Use the appropriate CLI tool to update the PR (gh pr edit for GitHub, az repos pr update for Azure DevOps)."#;
-
 async fn trigger_pr_description_follow_up(
     deployment: &DeploymentImpl,
     workspace: &Workspace,
@@ -147,12 +139,9 @@ async fn trigger_pr_description_follow_up(
         return Ok(());
     };
 
-    // Get latest agent session ID if one exists (for coding agent continuity)
-    let latest_agent_session_id = ExecutionProcess::find_latest_coding_agent_turn_session_id(
-        &deployment.db().pool,
-        session.id,
-    )
-    .await?;
+    // Get latest agent turn if one exists (for coding agent continuity)
+    let latest_session_info =
+        CodingAgentTurn::find_latest_session_info(&deployment.db().pool, session.id).await?;
 
     let working_dir = workspace
         .agent_working_dir
@@ -161,10 +150,11 @@ async fn trigger_pr_description_follow_up(
         .cloned();
 
     // Build the action type (follow-up if session exists, otherwise initial)
-    let action_type = if let Some(agent_session_id) = latest_agent_session_id {
+    let action_type = if let Some(info) = latest_session_info {
         ExecutorActionType::CodingAgentFollowUpRequest(CodingAgentFollowUpRequest {
             prompt,
-            session_id: agent_session_id,
+            session_id: info.session_id,
+            reset_to_message_id: None,
             executor_profile_id: executor_profile_id.clone(),
             working_dir: working_dir.clone(),
         })
@@ -222,7 +212,7 @@ pub async fn create_pr(
     let worktree_path = workspace_path.join(&repo.name);
 
     let git = deployment.git();
-    let push_remote = git.resolve_remote_name_for_branch(&repo_path, &workspace.branch)?;
+    let push_remote = git.resolve_remote_for_branch(&repo_path, &workspace.branch)?;
 
     // Try to get the remote from the branch name (works for remote-tracking branches like "upstream/main").
     // Fall back to push_remote if the branch doesn't exist locally or isn't a remote-tracking branch.
@@ -325,6 +315,21 @@ pub async fn create_pr(
                 tracing::error!("Failed to update workspace PR status: {}", e);
             }
 
+            if let Ok(client) = deployment.remote_client() {
+                let request = UpsertPullRequestRequest {
+                    url: pr_info.url.clone(),
+                    number: pr_info.number as i32,
+                    status: PullRequestStatus::Open,
+                    merged_at: None,
+                    merge_commit_sha: None,
+                    target_branch_name: base_branch.clone(),
+                    local_workspace_id: workspace.id,
+                };
+                tokio::spawn(async move {
+                    remote_sync::sync_pr_to_remote(&client, request).await;
+                });
+            }
+
             // Auto-open PR in browser
             if let Err(e) = utils::browser::open_browser(&pr_info.url).await {
                 tracing::warn!("Failed to open PR in browser: {}", e);
@@ -416,7 +421,7 @@ pub async fn attach_existing_pr(
     let git = deployment.git();
     let remote_url = git.get_remote_url(
         &repo.path,
-        &git.resolve_remote_name_for_branch(&repo.path, &workspace_repo.target_branch)?,
+        &git.resolve_remote_for_branch(&repo.path, &workspace_repo.target_branch)?,
     )?;
 
     let git_host = match git_host::GitHostService::from_url(&remote_url) {
@@ -479,11 +484,34 @@ pub async fn attach_existing_pr(
             .await?;
         }
 
+        if let Ok(client) = deployment.remote_client() {
+            let pr_status = match pr_info.status {
+                MergeStatus::Open => PullRequestStatus::Open,
+                MergeStatus::Merged => PullRequestStatus::Merged,
+                MergeStatus::Closed => PullRequestStatus::Closed,
+                MergeStatus::Unknown => PullRequestStatus::Open,
+            };
+            let request = UpsertPullRequestRequest {
+                url: pr_info.url.clone(),
+                number: pr_info.number as i32,
+                status: pr_status,
+                merged_at: None,
+                merge_commit_sha: pr_info.merge_commit_sha.clone(),
+                target_branch_name: workspace_repo.target_branch.clone(),
+                local_workspace_id: workspace.id,
+            };
+            tokio::spawn(async move {
+                remote_sync::sync_pr_to_remote(&client, request).await;
+            });
+        }
+
         // If PR is merged, mark task as done and archive workspace
         if matches!(pr_info.status, MergeStatus::Merged) {
             Task::update_status(pool, task.id, TaskStatus::Done).await?;
-            if !workspace.pinned {
-                Workspace::set_archived(pool, workspace.id, true).await?;
+            if !workspace.pinned
+                && let Err(e) = deployment.container().archive_workspace(workspace.id).await
+            {
+                tracing::error!("Failed to archive workspace {}: {}", workspace.id, e);
             }
         }
 
@@ -536,7 +564,7 @@ pub async fn get_pr_comments(
     let git = deployment.git();
     let remote_url = git.get_remote_url(
         &repo.path,
-        &git.resolve_remote_name_for_branch(&repo.path, &workspace_repo.target_branch)?,
+        &git.resolve_remote_for_branch(&repo.path, &workspace_repo.target_branch)?,
     )?;
 
     let git_host = match git_host::GitHostService::from_url(&remote_url) {

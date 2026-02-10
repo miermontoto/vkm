@@ -61,6 +61,7 @@ export const useConversationHistoryOld = ({
       (ep) =>
         ep.run_reason === 'setupscript' ||
         ep.run_reason === 'cleanupscript' ||
+        ep.run_reason === 'archivescript' ||
         ep.run_reason === 'codingagent'
     );
   }, [executionProcessesFiltered]);
@@ -268,6 +269,9 @@ export const useConversationHistoryOld = ({
                 break;
               case 'CleanupScript':
                 toolName = 'Cleanup Script';
+                break;
+              case 'ArchiveScript':
+                toolName = 'Archive Script';
                 break;
               case 'ToolInstallScript':
                 toolName = 'Tool Install Script';

@@ -233,6 +233,10 @@ pub enum ActionType {
     },
     TaskCreate {
         description: String,
+        #[serde(default)]
+        subagent_type: Option<String>,
+        #[serde(default)]
+        result: Option<ToolResult>,
     },
     PlanPresentation {
         plan: String,

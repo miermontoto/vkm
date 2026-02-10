@@ -276,7 +276,7 @@ export function ProjectTasks() {
   useEffect(() => {
     if (!projectId || !taskId || isLoading) return;
     if (selectedTask === null) {
-      navigate(`/projects/${projectId}/tasks`, { replace: true });
+      navigate(`/local-projects/${projectId}/tasks`, { replace: true });
     }
   }, [projectId, taskId, isLoading, selectedTask, navigate]);
 
@@ -340,7 +340,7 @@ export function ProjectTasks() {
       if (isPanelOpen) {
         handleClosePanel();
       } else {
-        navigate('/projects');
+        navigate('/local-projects');
       }
     },
     { scope: Scope.KANBAN }
@@ -587,7 +587,7 @@ export function ProjectTasks() {
 
   const handleClosePanel = useCallback(() => {
     if (projectId) {
-      navigate(`/projects/${projectId}/tasks`, { replace: true });
+      navigate(`/local-projects/${projectId}/tasks`, { replace: true });
     }
   }, [projectId, navigate]);
 
@@ -838,7 +838,7 @@ export function ProjectTasks() {
             task={selectedTask}
             sharedTask={getSharedTask(selectedTask)}
             onClose={() =>
-              navigate(`/projects/${projectId}/tasks`, { replace: true })
+              navigate(`/local-projects/${projectId}/tasks`, { replace: true })
             }
           />
         ) : (
@@ -849,7 +849,7 @@ export function ProjectTasks() {
             sharedTask={getSharedTask(selectedTask)}
             attempt={attempt ?? null}
             onClose={() =>
-              navigate(`/projects/${projectId}/tasks`, { replace: true })
+              navigate(`/local-projects/${projectId}/tasks`, { replace: true })
             }
           />
         )

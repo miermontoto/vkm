@@ -1,9 +1,10 @@
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
+
 use regex::Regex;
 use uuid::Uuid;
 
 // compile regex once at first use, not on every call
-static BRANCH_SANITIZER: Lazy<Regex> = Lazy::new(|| Regex::new(r"[^a-zA-Z0-9]+").unwrap());
+static BRANCH_SANITIZER: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"[^a-zA-Z0-9]+").unwrap());
 
 pub fn git_branch_id(input: &str) -> String {
     // 1. replace non-alphanumerics with hyphens (preserving case)

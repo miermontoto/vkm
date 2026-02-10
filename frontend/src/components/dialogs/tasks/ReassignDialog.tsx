@@ -25,13 +25,13 @@ import { useAuth } from '@/hooks';
 import { useMutation } from '@tanstack/react-query';
 import { useProject } from '@/contexts/ProjectContext';
 import { useProjectRemoteMembers } from '@/hooks/useProjectRemoteMembers';
-import type { OrganizationMemberWithProfile } from 'shared/types';
+import type { UserData } from 'shared/types';
 
 export interface ReassignDialogProps {
   sharedTask: SharedTaskRecord;
 }
 
-const buildMemberLabel = (member: OrganizationMemberWithProfile): string => {
+const buildMemberLabel = (member: UserData): string => {
   const fullName = [member.first_name, member.last_name]
     .filter(Boolean)
     .join(' ');
@@ -127,7 +127,7 @@ const ReassignDialogImpl = NiceModal.create<ReassignDialogProps>(
       }
       if (membersQuery.isError) {
         return (
-          membersQuery.error.message || 'Failed to load organization members.'
+          membersQuery.error?.message || 'Failed to load organization members.'
         );
       }
       return null;

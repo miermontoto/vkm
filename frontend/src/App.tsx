@@ -5,6 +5,7 @@ import i18n from '@/i18n';
 import { Projects } from '@/pages/Projects';
 import { ProjectTasks } from '@/pages/ProjectTasks';
 import { FullAttemptLogsPage } from '@/pages/FullAttemptLogs';
+import { Migration } from '@/pages/Migration';
 import { NormalLayout } from '@/components/layout/NormalLayout';
 import { useAuth } from '@/hooks';
 import { usePreviousPath } from '@/hooks/usePreviousPath';
@@ -100,7 +101,7 @@ function AppContent() {
             {/* ========== LEGACY DESIGN ROUTES ========== */}
             {/* VS Code full-page logs route (outside NormalLayout for minimal UI) */}
             <Route
-              path="/projects/:projectId/tasks/:taskId/attempts/:attemptId/full"
+              path="/local-projects/:projectId/tasks/:taskId/attempts/:attemptId/full"
               element={
                 <LegacyDesignScope>
                   <FullAttemptLogsPage />
@@ -116,10 +117,11 @@ function AppContent() {
               }
             >
               <Route path="/" element={<Projects />} />
-              <Route path="/projects" element={<Projects />} />
-              <Route path="/projects/:projectId" element={<Projects />} />
+              <Route path="/local-projects" element={<Projects />} />
+              <Route path="/local-projects/:projectId" element={<Projects />} />
+              <Route path="/migration" element={<Migration />} />
               <Route
-                path="/projects/:projectId/tasks"
+                path="/local-projects/:projectId/tasks"
                 element={<ProjectTasks />}
               />
               <Route path="/settings/*" element={<SettingsLayout />}>
@@ -139,11 +141,11 @@ function AppContent() {
                 element={<Navigate to="/settings/mcp" replace />}
               />
               <Route
-                path="/projects/:projectId/tasks/:taskId"
+                path="/local-projects/:projectId/tasks/:taskId"
                 element={<ProjectTasks />}
               />
               <Route
-                path="/projects/:projectId/tasks/:taskId/attempts/:attemptId"
+                path="/local-projects/:projectId/tasks/:taskId/attempts/:attemptId"
                 element={<ProjectTasks />}
               />
             </Route>

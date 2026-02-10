@@ -10,7 +10,6 @@ interface CommentWidgetLineProps {
   widgetKey: string;
   onSave: () => void;
   onCancel: () => void;
-  projectId?: string;
 }
 
 export function CommentWidgetLine({
@@ -18,7 +17,6 @@ export function CommentWidgetLine({
   widgetKey,
   onSave,
   onCancel,
-  projectId,
 }: CommentWidgetLineProps) {
   const { setDraft, addComment } = useReview();
   const [value, setValue] = useState(draft.text);
@@ -81,7 +79,6 @@ export function CommentWidgetLine({
         onChange={setValue}
         placeholder="Add a comment... (type @ to search files)"
         className="w-full bg-primary text-primary-foreground text-sm font-mono min-h-[60px]"
-        projectId={projectId}
         onCmdEnter={handleSave}
         autoFocus
       />

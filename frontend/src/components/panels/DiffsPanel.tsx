@@ -5,7 +5,6 @@ import { Loader } from '@/components/ui/loader';
 import { Button } from '@/components/ui/button';
 import DiffViewSwitch from '@/components/DiffViewSwitch';
 import DiffCard from '@/components/DiffCard';
-import { useDiffSummary } from '@/hooks/useDiffSummary';
 import { NewCardHeader } from '@/components/ui/new-card';
 import { ChevronsUp, ChevronsDown } from 'lucide-react';
 import {
@@ -56,9 +55,18 @@ export function DiffsPanel({ selectedAttempt, gitOps }: DiffsPanelProps) {
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [processedIds, setProcessedIds] = useState<Set<string>>(new Set());
   const { diffs, error } = useDiffStream(selectedAttempt?.id ?? null, true);
-  const { fileCount, added, deleted } = useDiffSummary(
-    selectedAttempt?.id ?? null
-  );
+
+  // calcular stats directamente de los diffs ya cargados (evita segundo WebSocket)
+  const { fileCount, added, deleted } = useMemo(() => {
+    return diffs.reduce(
+      (acc, d) => {
+        acc.added += d.additions ?? 0;
+        acc.deleted += d.deletions ?? 0;
+        return acc;
+      },
+      { fileCount: diffs.length, added: 0, deleted: 0 }
+    );
+  }, [diffs]);
 
   // Reset state when attempt changes
   useEffect(() => {

@@ -1,5 +1,5 @@
+use api_types::RemoteTaskStatus;
 use db::models::task::TaskStatus;
-use remote::db::tasks::TaskStatus as RemoteTaskStatus;
 
 pub(super) fn to_remote(status: &TaskStatus) -> RemoteTaskStatus {
     match status {

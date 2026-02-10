@@ -13,18 +13,20 @@ use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, ApplyPatchApprovalResponse,
     ClientInfo, ClientNotification, ClientRequest, ExecCommandApprovalResponse,
     GetAuthStatusParams, GetAuthStatusResponse, InitializeParams, InitializeResponse, InputItem,
-    JSONRPCError, JSONRPCNotification, JSONRPCRequest, JSONRPCResponse, NewConversationParams,
-    NewConversationResponse, RequestId, ResumeConversationParams, ResumeConversationResponse,
-    ReviewStartParams, ReviewStartResponse, ReviewTarget, SendUserMessageParams,
-    SendUserMessageResponse, ServerNotification, ServerRequest,
+    JSONRPCError, JSONRPCNotification, JSONRPCRequest, JSONRPCResponse, ListMcpServerStatusParams,
+    ListMcpServerStatusResponse, NewConversationParams, NewConversationResponse, RequestId,
+    ResumeConversationParams, ResumeConversationResponse, ReviewStartParams, ReviewStartResponse,
+    ReviewTarget, SendUserMessageParams, SendUserMessageResponse, ServerNotification,
+    ServerRequest,
 };
-use codex_protocol::{ConversationId, protocol::ReviewDecision};
+use codex_protocol::{ThreadId, protocol::ReviewDecision};
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::{self, Value};
 use tokio::{
     io::{AsyncWrite, AsyncWriteExt, BufWriter},
     sync::Mutex,
 };
+use tokio_util::sync::CancellationToken;
 use workspace_utils::approvals::ApprovalStatus;
 
 use super::jsonrpc::{JsonRpcCallbacks, JsonRpcPeer};
@@ -38,12 +40,14 @@ pub struct AppServerClient {
     rpc: OnceLock<JsonRpcPeer>,
     log_writer: LogWriter,
     approvals: Option<Arc<dyn ExecutorApprovalService>>,
-    conversation_id: Mutex<Option<ConversationId>>,
+    conversation_id: Mutex<Option<ThreadId>>,
     pending_feedback: Mutex<VecDeque<String>>,
     auto_approve: bool,
     repo_context: RepoContext,
     commit_reminder: bool,
+    commit_reminder_prompt: String,
     commit_reminder_sent: AtomicBool,
+    cancel: CancellationToken,
 }
 
 impl AppServerClient {
@@ -53,6 +57,8 @@ impl AppServerClient {
         auto_approve: bool,
         repo_context: RepoContext,
         commit_reminder: bool,
+        commit_reminder_prompt: String,
+        cancel: CancellationToken,
     ) -> Arc<Self> {
         Arc::new(Self {
             rpc: OnceLock::new(),
@@ -63,7 +69,9 @@ impl AppServerClient {
             pending_feedback: Mutex::new(VecDeque::new()),
             repo_context,
             commit_reminder,
+            commit_reminder_prompt,
             commit_reminder_sent: AtomicBool::new(false),
+            cancel,
         })
     }
 
@@ -75,6 +83,10 @@ impl AppServerClient {
         self.rpc.get().expect("Codex RPC peer not attached")
     }
 
+    pub fn log_writer(&self) -> &LogWriter {
+        &self.log_writer
+    }
+
     pub async fn initialize(&self) -> Result<(), ExecutorError> {
         let request = ClientRequest::Initialize {
             request_id: self.next_request_id(),
@@ -84,6 +96,7 @@ impl AppServerClient {
                     title: None,
                     version: env!("CARGO_PKG_VERSION").to_string(),
                 },
+                capabilities: None,
             },
         };
 
@@ -122,7 +135,7 @@ impl AppServerClient {
 
     pub async fn add_conversation_listener(
         &self,
-        conversation_id: codex_protocol::ConversationId,
+        conversation_id: codex_protocol::ThreadId,
     ) -> Result<AddConversationSubscriptionResponse, ExecutorError> {
         let request = ClientRequest::AddConversationListener {
             request_id: self.next_request_id(),
@@ -136,14 +149,17 @@ impl AppServerClient {
 
     pub async fn send_user_message(
         &self,
-        conversation_id: codex_protocol::ConversationId,
+        conversation_id: codex_protocol::ThreadId,
         message: String,
     ) -> Result<SendUserMessageResponse, ExecutorError> {
         let request = ClientRequest::SendUserMessage {
             request_id: self.next_request_id(),
             params: SendUserMessageParams {
                 conversation_id,
-                items: vec![InputItem::Text { text: message }],
+                items: vec![InputItem::Text {
+                    text: message,
+                    text_elements: vec![],
+                }],
             },
         };
         self.send_request(request, "sendUserMessage").await
@@ -176,6 +192,20 @@ impl AppServerClient {
         self.send_request(request, "reviewStart").await
     }
 
+    pub async fn list_mcp_server_status(
+        &self,
+        cursor: Option<String>,
+    ) -> Result<ListMcpServerStatusResponse, ExecutorError> {
+        let request = ClientRequest::McpServerStatusList {
+            request_id: self.next_request_id(),
+            params: ListMcpServerStatusParams {
+                cursor,
+                limit: None,
+            },
+        };
+        self.send_request(request, "mcpServerStatus/list").await
+    }
+
     async fn handle_server_request(
         &self,
         peer: &JsonRpcPeer,
@@ -185,18 +215,21 @@ impl AppServerClient {
             ServerRequest::ApplyPatchApproval { request_id, params } => {
                 let input = serde_json::to_value(&params)
                     .map_err(|err| ExecutorError::Io(io::Error::other(err.to_string())))?;
-                let status = match self
+                let status = self
                     .request_tool_approval("edit", input, &params.call_id)
                     .await
-                {
-                    Ok(status) => status,
-                    Err(err) => {
-                        tracing::error!("failed to request patch approval: {err}");
-                        ApprovalStatus::Denied {
-                            reason: Some("approval service error".to_string()),
+                    .map_err(|err| {
+                        if !matches!(
+                            err,
+                            ExecutorError::ExecutorApprovalError(ExecutorApprovalError::Cancelled)
+                        ) {
+                            tracing::error!(
+                                "Codex apply_patch approval failed for call_id={}: {err}",
+                                params.call_id
+                            );
                         }
-                    }
-                };
+                        err
+                    })?;
                 self.log_writer
                     .log_raw(
                         &Approval::approval_response(
@@ -219,18 +252,16 @@ impl AppServerClient {
             ServerRequest::ExecCommandApproval { request_id, params } => {
                 let input = serde_json::to_value(&params)
                     .map_err(|err| ExecutorError::Io(io::Error::other(err.to_string())))?;
-                let status = match self
+                let status = self
                     .request_tool_approval("bash", input, &params.call_id)
                     .await
-                {
-                    Ok(status) => status,
-                    Err(err) => {
-                        tracing::error!("failed to request command approval: {err}");
-                        ApprovalStatus::Denied {
-                            reason: Some("approval service error".to_string()),
-                        }
-                    }
-                };
+                    .map_err(|err| {
+                        tracing::error!(
+                            "Codex exec_command approval failed for call_id={}: {err}",
+                            params.call_id
+                        );
+                        err
+                    })?;
                 self.log_writer
                     .log_raw(
                         &Approval::approval_response(
@@ -252,7 +283,10 @@ impl AppServerClient {
                 Ok(())
             }
             ServerRequest::CommandExecutionRequestApproval { .. }
-            | ServerRequest::FileChangeRequestApproval { .. } => {
+            | ServerRequest::FileChangeRequestApproval { .. }
+            | ServerRequest::ToolRequestUserInput { .. }
+            | ServerRequest::DynamicToolCall { .. }
+            | ServerRequest::ChatgptAuthTokensRefresh { .. } => {
                 // These are unreachable until switching to v2 APIs for starting the session.
                 // https://github.com/openai/codex/blob/cbd7d0d54330443887852b21636c816f60f1bde8/codex-rs/app-server-protocol/src/protocol/common.rs#L445
                 tracing::error!("received unsupported server request: {:?}", request);
@@ -270,22 +304,20 @@ impl AppServerClient {
         tool_input: Value,
         tool_call_id: &str,
     ) -> Result<ApprovalStatus, ExecutorError> {
-        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
         if self.auto_approve {
             return Ok(ApprovalStatus::Approved);
         }
-        Ok(self
+        let approval_service = self
             .approvals
             .as_ref()
-            .ok_or(ExecutorApprovalError::ServiceUnavailable)?
-            .request_tool_approval(tool_name, tool_input, tool_call_id)
+            .ok_or(ExecutorApprovalError::ServiceUnavailable)?;
+
+        Ok(approval_service
+            .request_tool_approval(tool_name, tool_input, tool_call_id, self.cancel.clone())
             .await?)
     }
 
-    pub async fn register_session(
-        &self,
-        conversation_id: &ConversationId,
-    ) -> Result<(), ExecutorError> {
+    pub async fn register_session(&self, conversation_id: &ThreadId) -> Result<(), ExecutorError> {
         {
             let mut guard = self.conversation_id.lock().await;
             guard.replace(*conversation_id);
@@ -306,7 +338,9 @@ impl AppServerClient {
         R: DeserializeOwned + std::fmt::Debug,
     {
         let request_id = request_id(&request);
-        self.rpc().request(request_id, &request, label).await
+        self.rpc()
+            .request(request_id, &request, label, self.cancel.clone())
+            .await
     }
 
     fn next_request_id(&self) -> RequestId {
@@ -376,13 +410,17 @@ impl AppServerClient {
         }
     }
 
-    fn spawn_user_message(&self, conversation_id: ConversationId, message: String) {
+    fn spawn_user_message(&self, conversation_id: ThreadId, message: String) {
         let peer = self.rpc().clone();
+        let cancel = self.cancel.clone();
         let request = ClientRequest::SendUserMessage {
             request_id: peer.next_request_id(),
             params: SendUserMessageParams {
                 conversation_id,
-                items: vec![InputItem::Text { text: message }],
+                items: vec![InputItem::Text {
+                    text: message,
+                    text_elements: vec![],
+                }],
             },
         };
         tokio::spawn(async move {
@@ -391,6 +429,7 @@ impl AppServerClient {
                     request_id(&request),
                     &request,
                     "sendUserMessage",
+                    cancel,
                 )
                 .await
             {
@@ -480,22 +519,13 @@ impl JsonRpcCallbacks for AppServerClient {
         if has_finished
             && self.commit_reminder
             && !self.commit_reminder_sent.swap(true, Ordering::SeqCst)
+            && let status = self.repo_context.check_uncommitted_changes().await
+            && !status.is_empty()
+            && let Some(conversation_id) = *self.conversation_id.lock().await
         {
-            let status =
-                workspace_utils::git::check_uncommitted_changes(&self.repo_context.repo_paths())
-                    .await;
-            if !status.is_empty()
-                && let Some(conversation_id) = *self.conversation_id.lock().await
-            {
-                self.spawn_user_message(
-                    conversation_id,
-                    format!(
-                        "You have uncommitted changes. Please stage and commit them now with a descriptive commit message.{}",
-                        status
-                    ),
-                );
-                return Ok(false);
-            }
+            let prompt = format!("{}\n{}", self.commit_reminder_prompt, status);
+            self.spawn_user_message(conversation_id, prompt);
+            return Ok(false);
         }
 
         Ok(has_finished)
@@ -532,7 +562,8 @@ fn request_id(request: &ClientRequest) -> RequestId {
         | ClientRequest::ResumeConversation { request_id, .. }
         | ClientRequest::AddConversationListener { request_id, .. }
         | ClientRequest::SendUserMessage { request_id, .. }
-        | ClientRequest::ReviewStart { request_id, .. } => request_id.clone(),
+        | ClientRequest::ReviewStart { request_id, .. }
+        | ClientRequest::McpServerStatusList { request_id, .. } => request_id.clone(),
         _ => unreachable!("request_id called for unsupported request variant"),
     }
 }

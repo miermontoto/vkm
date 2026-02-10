@@ -1,20 +1,24 @@
+mod analytics;
 mod app;
 mod auth;
+mod billing;
 pub mod config;
 pub mod db;
-pub mod entities;
-pub mod entity;
+pub mod mutation_definition;
 pub mod github_app;
 pub mod mail;
-pub mod mutation_types;
+mod middleware;
+pub mod response;
 pub mod r2;
 pub mod routes;
+pub mod shape_definition;
 pub mod shapes;
 mod state;
 
 use std::env;
 
 pub use app::Server;
+pub use billing::{BillingCheckError, BillingService};
 pub use state::AppState;
 use tracing_error::ErrorLayer;
 use tracing_subscriber::{
@@ -22,6 +26,7 @@ use tracing_subscriber::{
     layer::{Layer as _, SubscriberExt},
     util::SubscriberInitExt,
 };
+
 
 pub fn init_tracing() {
     if tracing::dispatcher::has_been_set() {
@@ -40,4 +45,9 @@ pub fn init_tracing() {
         .with(ErrorLayer::default())
         .with(fmt_layer)
         .init();
+}
+
+pub fn configure_user_scope(user_id: uuid::Uuid, _username: Option<&str>, _email: Option<&str>) {
+    // sentry deshabilitado en este fork
+    let _ = user_id;
 }

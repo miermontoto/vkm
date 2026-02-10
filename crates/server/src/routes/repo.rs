@@ -10,8 +10,9 @@ use db::models::{
     repo::{Repo, UpdateRepo},
 };
 use deployment::Deployment;
+use git::GitBranch;
 use serde::Deserialize;
-use services::services::{file_search::SearchQuery, git::GitBranch};
+use services::services::file_search::SearchQuery;
 use ts_rs::TS;
 use utils::response::ApiResponse;
 use uuid::Uuid;
@@ -100,6 +101,13 @@ pub async fn get_repos(
     State(deployment): State<DeploymentImpl>,
 ) -> Result<ResponseJson<ApiResponse<Vec<Repo>>>, ApiError> {
     let repos = Repo::list_all(&deployment.db().pool).await?;
+    Ok(ResponseJson(ApiResponse::success(repos)))
+}
+
+pub async fn get_recent_repos(
+    State(deployment): State<DeploymentImpl>,
+) -> Result<ResponseJson<ApiResponse<Vec<Repo>>>, ApiError> {
+    let repos = Repo::list_by_recent_workspace_usage(&deployment.db().pool).await?;
     Ok(ResponseJson(ApiResponse::success(repos)))
 }
 
@@ -197,6 +205,7 @@ pub async fn search_repo(
 pub fn router() -> Router<DeploymentImpl> {
     Router::new()
         .route("/repos", get(get_repos).post(register_repo))
+        .route("/repos/recent", get(get_recent_repos))
         .route("/repos/init", post(init_repo))
         .route("/repos/batch", post(get_repos_batch))
         .route("/repos/{repo_id}", get(get_repo).put(update_repo))

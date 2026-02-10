@@ -19,33 +19,15 @@ use db::models::{
 };
 use deployment::Deployment;
 use futures_util::TryStreamExt;
-use serde::Deserialize;
-use services::services::{
-    file_search::SearchQuery, git::GitRemote, project::ProjectServiceError,
-    remote_client::CreateRemoteProjectPayload,
-};
-use ts_rs::TS;
-use utils::{
-    api::projects::{RemoteProject, RemoteProjectMembersResponse},
-    response::ApiResponse,
-};
+use git::GitRemote;
+use services::services::{file_search::SearchQuery, project::ProjectServiceError};
+use utils::response::ApiResponse;
 use uuid::Uuid;
 
 use crate::{
     DeploymentImpl, error::ApiError, middleware::load_project_middleware,
     ws_utils::stream_with_heartbeat,
 };
-
-#[derive(Deserialize, TS)]
-pub struct LinkToExistingRequest {
-    pub remote_project_id: Uuid,
-}
-
-#[derive(Deserialize, TS)]
-pub struct CreateRemoteProjectRequest {
-    pub organization_id: Uuid,
-    pub name: String,
-}
 
 pub async fn get_projects(
     State(deployment): State<DeploymentImpl>,
@@ -82,6 +64,9 @@ pub async fn get_project(
     Ok(ResponseJson(ApiResponse::success(project)))
 }
 
+// NOTE: Remote project features commented out - not supported in this fork
+// These were part of upstream's remote/cloud server functionality
+/*
 pub async fn link_project_to_existing_remote(
     Extension(project): Extension<Project>,
     State(deployment): State<DeploymentImpl>,
@@ -187,6 +172,7 @@ async fn apply_remote_project_link(
         .await?;
     Ok(updated_project)
 }
+*/
 
 pub async fn get_project_remotes(
     Extension(project): Extension<Project>,
@@ -536,16 +522,12 @@ pub fn router(deployment: &DeploymentImpl) -> Router<DeploymentImpl> {
             "/",
             get(get_project).put(update_project).delete(delete_project),
         )
-        .route("/remote/members", get(get_project_remote_members))
+        // NOTE: Remote project routes commented out - not supported in this fork
+        // .route("/remote/members", get(get_project_remote_members))
         .route("/remotes", get(get_project_remotes))
         .route("/search", get(search_project_files))
         .route("/open-editor", post(open_project_in_editor))
         .route("/open-terminal", post(open_project_in_terminal))
-        .route(
-            "/link",
-            post(link_project_to_existing_remote).delete(unlink_project),
-        )
-        .route("/link/create", post(create_and_link_remote_project))
         .route(
             "/repositories",
             get(get_project_repositories).post(add_project_repository),
@@ -564,8 +546,5 @@ pub fn router(deployment: &DeploymentImpl) -> Router<DeploymentImpl> {
         .route("/stream/ws", get(stream_projects_ws))
         .nest("/{id}", project_id_router);
 
-    Router::new().nest("/projects", projects_router).route(
-        "/remote-projects/{remote_project_id}",
-        get(get_remote_project_by_id),
-    )
+    Router::new().nest("/projects", projects_router)
 }

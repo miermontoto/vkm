@@ -218,9 +218,69 @@ See `.claude/commands/merge-upstream.md` for detailed instructions.
 6. ✅ Type generation: `pnpm run generate-types:check`
 7. ⚠️ Tests: 9 git_ops_safety tests fail due to 1Password SSH agent (environment-specific)
 
+#### Merge 2026-02-10: BloopAI/vibe-kanban upstream sync
+
+**Context:** Merged 158 upstream commits from BloopAI/vibe-kanban (v0.1.7). Fork is ~1842 commits ahead. Merge base: `044dcbc1`.
+
+**Key upstream changes integrated:**
+- **Remote crate refactor**: Type-safe MutationBuilder, decoupled shapes, clean module structure (#2538)
+- **Git service crate extraction**: Git service moved to dedicated crate (#2353)
+- **Git diff refactoring**: New diff data pipeline with JSON patch streams (#2310)
+- **codex-state v0.98.0**: Bumped codex dependencies with approval matching fixes (#2570)
+- **OpenCode improvements**: Subagent results display, rename "mode" to "agent", session env vars
+- **Kanban enhancements**: Per-project views, hover-only actions, filter dialog refactor, priority sort
+- **Issue relationships UI**: Full relationship management with parent/sub-issue unlink actions (#2559)
+- **Workspace sidebar filters**: Project and PR status filters, accordion sort by last completed
+- **WYSIWYG improvements**: Nested list Tab behavior, markdown paste, inline code escaping
+- **Assignee avatars**: Show avatars instead of count badge in issue panel and filter bar
+- **GitHub stars button**: Social links in AppBar
+- **Default working dir**: Repository setting for monorepo support
+- **23 unused crate dependencies removed**: Workspace-wide cleanup (#2572)
+- **Remote schema edits**: Updated Electric SQL shapes and type definitions
+- **Cargo.lock sync CI check**: Ensures remote Cargo.lock stays in sync
+
+**Major architectural change — SQLx feature unification:**
+- `codex-state v0.98.0` enables sqlx's `"time"` feature via cargo feature unification
+- This deactivates `chrono` types in sqlx-postgres (`#[cfg(all(feature = "chrono", not(feature = "time")))]`)
+- **Solution**: Removed `remote` dependency from `services` crate, moved shared types to `api-types` crate
+- `remote` crate excluded from default workspace members (has its own Cargo.lock)
+- Reverted SQLx TLS backend from `tls-rustls-aws-lc-rs` to `tls-rustls-ring` for our workspace
+
+**Conflicts resolved:**
+- `crates/deployment/src/lib.rs`: Removed `analytics_enabled` config check (v14 doesn't have it), made `spawn_pr_monitor_service` abstract
+- `crates/local-deployment/src/lib.rs`: Concrete `spawn_pr_monitor_service` impl with AnalyticsContext
+- `crates/local-deployment/src/container.rs`: `commit_reminder_enabled` → `commit_reminder`, removed dynamic prompt
+- `crates/server/src/routes/shared_tasks.rs`: Changed `remote` imports to `api_types`
+- `crates/server/src/routes/task_attempts/pr.rs`: Renamed `resolve_remote_name_for_branch` → `resolve_remote_for_branch`
+- `crates/server/src/routes/task_attempts.rs`: Added `search_workspace_files` stub
+- `crates/server/src/routes/projects.rs`: Stubbed out remote project handlers
+- `crates/executors/src/executors/qa_mock.rs`: Updated for ClaudeJson::System struct changes (removed `slash_commands`, `plugins`, `status`)
+- `crates/server/src/bin/generate_types.rs`: Removed duplicate `GitRemote::decl()`, fixed missing types
+- Multiple server route files: Fixed unused imports for clippy compliance
+- Frontend: Deleted reintroduced `ui-new/` files, `useKanbanFilters.ts`, `useUiPreferencesScratch.ts`
+- Frontend: Created `LinkProjectDialog.tsx` stub, `useProjectRemoteMembers.ts` hook
+- Frontend: Fixed `useFollowUpSend.ts` (added `reset_to_message_id: null`)
+
+**Custom features preserved:**
+- Package name: `@miermontoto/vkm`
+- Version: 1.5.2
+- Shared task infrastructure (Electric SQL sync)
+- Custom git workflow features (auto-commit, auto-PR, push modes)
+- Ralph Wiggum mode
+- Sentry and PostHog removed
+- Beta workspaces / ui-new completely excluded
+
+**All CI checks passing:**
+1. ✅ TypeScript compilation: `pnpm run check`
+2. ✅ Rust formatting: `cargo fmt --all -- --check`
+3. ✅ Frontend formatting: `pnpm run format:check`
+4. ✅ Rust linting: `cargo clippy --all --all-targets -- -D warnings`
+5. ✅ Tests: `cargo test --workspace` (230 tests passed)
+6. ✅ Type generation: `pnpm run generate-types:check`
+
 ## Project Structure & Module Organization
 
-- `crates/`: Rust workspace crates — `server` (API + bins), `db` (SQLx models/migrations), `executors`, `services`, `utils`, `deployment`, `local-deployment`, `remote`.
+- `crates/`: Rust workspace crates — `server` (API + bins), `db` (SQLx models/migrations), `executors`, `services`, `utils`, `deployment`, `local-deployment`, `remote`, `api-types`.
 - `frontend/`: React + TypeScript app (Vite, Tailwind). Source in `frontend/src`.
 - `frontend/src/components/dialogs`: Dialog components for the frontend.
 - `shared/`: Generated TypeScript types (`shared/types.ts`). Do not edit directly.
@@ -255,9 +315,6 @@ Do not manually edit shared/types.ts, instead edit crates/server/src/bin/generat
 - Review CLI binary: `vkm-review` (formerly `review`)
 - Data directory: `~/.local/share/vkm` (XDG standard)
 - Cache directory: `~/.vkm/bin`
-
-## Automated QA
-- When testing changes by running the application, you should prefer `pnpm run dev:qa` over `pnpm run dev`, which starts the application in a dedicated mode that is optimised for QA testing
 
 ## Coding Style & Naming Conventions
 

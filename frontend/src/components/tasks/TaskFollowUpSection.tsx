@@ -38,7 +38,6 @@ import { useEntries } from '@/contexts/EntriesContext';
 import { useExecutionProcessesContext } from '@/contexts/ExecutionProcessesContext';
 import { useKeySubmitFollowUp, Scope } from '@/keyboard';
 import { useHotkeysContext } from 'react-hotkeys-hook';
-import { useProject } from '@/contexts/ProjectContext';
 //
 import { VariantSelector } from '@/components/tasks/VariantSelector';
 import { useAttemptBranch } from '@/hooks/useAttemptBranch';
@@ -75,7 +74,6 @@ export function TaskFollowUpSection({
   session,
 }: TaskFollowUpSectionProps) {
   const { t } = useTranslation('tasks');
-  const { projectId } = useProject();
 
   // Derive IDs from session
   const workspaceId = session?.workspace_id;
@@ -782,7 +780,7 @@ export function TaskFollowUpSection({
                 onChange={handleEditorChange}
                 disabled={!isEditable}
                 onPasteFiles={handlePasteFiles}
-                projectId={projectId}
+                repoIds={repos.map((r) => r.id)}
                 taskAttemptId={workspaceId}
                 onCmdEnter={handleSubmitShortcut}
                 className="min-h-[40px]"

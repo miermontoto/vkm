@@ -417,6 +417,17 @@ ORDER BY t.updated_at DESC"#
         Ok(tasks)
     }
 
+    pub async fn find_all(pool: &SqlitePool) -> Result<Vec<Self>, sqlx::Error> {
+        sqlx::query_as!(
+            Task,
+            r#"SELECT id as "id!: Uuid", project_id as "project_id!: Uuid", title, description, status as "status!: TaskStatus", parent_workspace_id as "parent_workspace_id: Uuid", shared_task_id as "shared_task_id: Uuid", use_ralph_wiggum as "use_ralph_wiggum!: bool", ralph_max_iterations as "ralph_max_iterations: i64", ralph_completion_promise as "ralph_completion_promise: String", created_at as "created_at!: DateTime<Utc>", updated_at as "updated_at!: DateTime<Utc>"
+               FROM tasks
+               ORDER BY created_at ASC"#
+        )
+        .fetch_all(pool)
+        .await
+    }
+
     pub async fn find_by_id(pool: &SqlitePool, id: Uuid) -> Result<Option<Self>, sqlx::Error> {
         sqlx::query_as!(
             Task,

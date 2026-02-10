@@ -537,7 +537,6 @@ const TaskFormDialogImpl = NiceModal.create<TaskFormDialogProps>((props) => {
                   value={field.state.value}
                   onChange={(desc) => field.handleChange(desc)}
                   disabled={isSubmitting}
-                  projectId={projectId}
                   onPasteFiles={onDrop}
                   onCmdEnter={primaryAction}
                   onShiftCmdEnter={handleSubmitCreateOnly}

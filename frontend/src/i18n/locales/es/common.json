@@ -36,7 +36,8 @@
     "reset": "Restablecer",
     "save": "Guardar",
     "send": "Enviar",
-    "addItem": "Añadir elemento"
+    "addItem": "Añadir elemento",
+    "reply": "Responder"
   },
   "form": {
     "notSpecified": "No especificado",
@@ -59,6 +60,7 @@
     "taskCompleted": "Tarea completada",
     "ran": "Ejecutó",
     "tool": "Herramienta",
+    "thinking": "Pensando",
     "toolSummary": {
       "read": "Leyó {{path}}",
       "searched": "Buscó \"{{query}}\"",
@@ -67,7 +69,10 @@
       "createdTask": "Creó tarea: {{description}}",
       "todoOperation": "{{operation}} tareas pendientes"
     },
-    "fixScript": "Corregir Script"
+    "fixScript": "Corregir Script",
+    "subagent": {
+      "defaultType": "Subagente"
+    }
   },
   "language": {
     "browserDefault": "Predeterminado del navegador"
@@ -91,11 +96,18 @@
     "menuItem": "Organización",
     "loadingPlaceholder": "Cargando organizaciones...",
     "selectPlaceholder": "Seleccionar una organización",
-    "currentBadge": " (actual)"
+    "currentBadge": " (actual)",
+    "organizations": "Organizaciones",
+    "createOrganization": "Crear organización",
+    "orgSettings": "Configuración de la organización",
+    "migrate": "Migrar"
   },
   "navbar": {
     "tryNewUI": "prueba la nueva interfaz"
   },
+  "ok": "OK",
+  "error": "Error",
+  "signIn": "Iniciar sesión",
   "signOut": "Cerrar sesión",
   "devMode": {
     "banner": "Modo de Desarrollo - Esta es una compilación de desarrollo"
@@ -196,7 +208,9 @@
   "commandBar": {
     "noResults": "No se encontraron resultados.",
     "back": "Atrás",
-    "defaultPlaceholder": "Escribe un comando o busca..."
+    "defaultPlaceholder": "Escribe un comando o busca...",
+    "selectBranch": "Select Branch",
+    "selectBranchFor": "Select Branch for {{repoName}}"
   },
   "chatBox": {
     "variants": "Variantes",
@@ -236,7 +250,64 @@
     "tags": "Etiquetas",
     "files": "Archivos",
     "commands": "Comandos",
+    "chooseRepo": "Elegir repositorio",
+    "selectedRepo": "Repositorio seleccionado: {{repoName}}",
+    "missingRepo": "El repositorio seleccionado ya no está disponible.",
     "noTagsOrFiles": "No se encontraron etiquetas ni archivos",
     "noCommands": "No hay comandos disponibles para este agente."
+  },
+  "kanban": {
+    "noStatusesFound": "No se encontraron estados para este proyecto",
+    "noVisibleStatuses": "Todos los estados están ocultos. Usa la configuración de visualización o cambia a otra pestaña para ver los problemas.",
+    "noProjectFound": "No se encontró el proyecto",
+    "noOrganizationFound": "No se encontró la organización",
+    "unassigned": "Sin asignar",
+    "noTagsAvailable": "No hay etiquetas disponibles",
+    "createNewIssue": "Crear nuevo issue",
+    "createNewTag": "Crear nueva etiqueta",
+    "searchTags": "Buscar etiquetas...",
+    "selectColorFor": "Seleccionar color para",
+    "createTag": "Crear",
+    "filesCount": "{{count}} Archivos",
+    "noPrCreated": "No se creó PR",
+    "noCommentsYet": "Sin comentarios aún",
+    "createdBy": "Creado por",
+    "comments": "Comentarios",
+    "enterCommentPlaceholder": "Ingresa tu comentario aquí...",
+    "subIssues": "Subtareas",
+    "noSubIssues": "Sin subtareas",
+    "markIndependentIssue": "Marcar como problema independiente",
+    "parentIssue": "Padre",
+    "subIssueIndicator": "↳",
+    "showSubIssues": "Mostrar subtareas",
+    "viewTabs": {
+      "active": "Activo",
+      "all": "Todo"
+    },
+    "loginRequired": {
+      "title": "Se requiere iniciar sesión",
+      "description": "Por favor inicia sesión para ver este proyecto.",
+      "action": "Iniciar sesión"
+    }
+  },
+  "createMode": {
+    "headings": {
+      "repoStep": "¿En qué repositorios te gustaría trabajar?",
+      "chatStep": "¿En qué te gustaría trabajar?"
+    },
+    "repoPicker": {
+      "actions": {
+        "recent": "Recientes",
+        "browse": "Explorar",
+        "create": "Crear"
+      }
+    }
+  },
+  "syncError": {
+    "networkErrors": "Errores de red",
+    "streamsAffected": "{{count}} flujo afectado",
+    "streamsAffected_other": "{{count}} flujos afectados",
+    "status": "(estado {{status}})",
+    "refreshPage": "Actualizar página"
   }
 }

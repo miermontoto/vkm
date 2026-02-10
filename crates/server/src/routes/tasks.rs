@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow;
+use api_types::LoginStatus;
 use axum::{
     Extension, Json, Router,
     extract::{
@@ -28,7 +29,7 @@ use services::services::{
 };
 use sqlx::Error as SqlxError;
 use ts_rs::TS;
-use utils::{api::oauth::LoginStatus, response::ApiResponse};
+use utils::response::ApiResponse;
 use uuid::Uuid;
 
 use crate::{
@@ -225,13 +226,19 @@ pub async fn create_task_and_start(
         .await;
 
     // Compute agent_working_dir based on repo count:
-    // - Single repo: use repo name as working dir (agent runs in repo directory)
+    // - Single repo: join repo name with default_working_dir (if set), or just repo name
     // - Multiple repos: use None (agent runs in workspace root)
     let agent_working_dir = if payload.repos.len() == 1 {
         let repo = Repo::find_by_id(pool, payload.repos[0].repo_id)
             .await?
             .ok_or(RepoError::NotFound)?;
-        Some(repo.name)
+        match repo.default_working_dir {
+            Some(subdir) => {
+                let path = PathBuf::from(&repo.name).join(&subdir);
+                Some(path.to_string_lossy().to_string())
+            }
+            None => Some(repo.name),
+        }
     } else {
         None
     };

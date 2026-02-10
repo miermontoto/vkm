@@ -16,11 +16,9 @@ import {
   Edit,
   ExternalLink,
   FolderOpen,
-  Link2,
   MoreHorizontal,
   Terminal,
   Trash2,
-  Unlink,
 } from 'lucide-react';
 import { ProjectWithTaskCounts } from 'shared/types';
 import { useEffect, useRef } from 'react';
@@ -28,10 +26,8 @@ import { useOpenProjectInEditor } from '@/hooks/useOpenProjectInEditor';
 import { useOpenProjectInTerminal } from '@/hooks/useOpenProjectInTerminal';
 import { useNavigateWithSearch, useProjectRepos } from '@/hooks';
 import { projectsApi } from '@/lib/api';
-import { LinkProjectDialog } from '@/components/dialogs/projects/LinkProjectDialog';
 import { useTranslation } from 'react-i18next';
 import { statusLabels, statusBoardColors } from '@/utils/statusLabels';
-import { useProjectMutations } from '@/hooks/useProjectMutations';
 
 type Props = {
   project: ProjectWithTaskCounts;
@@ -49,13 +45,6 @@ function ProjectCard({ project, isFocused, setError, onEdit }: Props) {
 
   const { data: repos } = useProjectRepos(project.id);
   const isSingleRepoProject = repos?.length === 1;
-
-  const { unlinkProject } = useProjectMutations({
-    onUnlinkError: (error) => {
-      console.error('Failed to unlink project:', error);
-      setError('Failed to unlink project');
-    },
-  });
 
   useEffect(() => {
     if (isFocused && ref.current) {
@@ -88,17 +77,6 @@ function ProjectCard({ project, isFocused, setError, onEdit }: Props) {
     handleOpenInEditor();
   };
 
-  const handleLinkProject = async () => {
-    try {
-      await LinkProjectDialog.show({
-        projectId: project.id,
-        projectName: project.name,
-      });
-    } catch (error) {
-      console.error('Failed to link project:', error);
-    }
-  };
-
   const taskCounts = project.task_counts;
   const totalTasks =
     Number(taskCounts.todo) +
@@ -107,19 +85,10 @@ function ProjectCard({ project, isFocused, setError, onEdit }: Props) {
     Number(taskCounts.done) +
     Number(taskCounts.cancelled);
 
-  const handleUnlinkProject = () => {
-    const confirmed = window.confirm(
-      `Are you sure you want to unlink "${project.name}"? The local project will remain, but it will no longer be linked to the remote project.`
-    );
-    if (confirmed) {
-      unlinkProject.mutate(project.id);
-    }
-  };
-
   return (
     <Card
       className={`hover:shadow-md transition-shadow cursor-pointer focus:ring-2 focus:ring-primary outline-none border`}
-      onClick={() => navigate(`/projects/${project.id}/tasks`)}
+      onClick={() => navigate(`/local-projects/${project.id}/tasks`)}
       tabIndex={isFocused ? 0 : -1}
       ref={ref}
     >
@@ -137,7 +106,7 @@ function ProjectCard({ project, isFocused, setError, onEdit }: Props) {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/projects/${project.id}`);
+                    navigate(`/local-projects/${project.id}`);
                   }}
                 >
                   <ExternalLink className="mr-2 h-4 w-4" />
@@ -152,27 +121,6 @@ function ProjectCard({ project, isFocused, setError, onEdit }: Props) {
                   >
                     <FolderOpen className="mr-2 h-4 w-4" />
                     {t('openInIDE')}
-                  </DropdownMenuItem>
-                )}
-                {project.remote_project_id ? (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUnlinkProject();
-                    }}
-                  >
-                    <Unlink className="mr-2 h-4 w-4" />
-                    {t('unlinkFromOrganization')}
-                  </DropdownMenuItem>
-                ) : (
-                  <DropdownMenuItem
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleLinkProject();
-                    }}
-                  >
-                    <Link2 className="mr-2 h-4 w-4" />
-                    {t('linkToOrganization')}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem

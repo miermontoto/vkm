@@ -8,8 +8,9 @@ use axum::{
 };
 use db::models::{merge::Merge, pending_commit::PendingCommit};
 use deployment::Deployment;
+use git::GitCli;
 use serde::Deserialize;
-use services::services::{config::GitAutoPushMode, git::GitCli};
+use services::services::config::GitAutoPushMode;
 use ts_rs::TS;
 use utils::response::ApiResponse;
 use uuid::Uuid;

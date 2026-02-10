@@ -1,3 +1,4 @@
+use api_types::SharedTaskResponse as RemoteSharedTaskResponse;
 use axum::{
     Json, Router,
     extract::{Path, State},
@@ -7,7 +8,6 @@ use axum::{
 use chrono::{DateTime, Utc};
 use db::models::task::{Task, TaskStatus};
 use deployment::Deployment;
-use remote::routes::tasks::SharedTaskResponse as RemoteSharedTaskResponse;
 use serde::{Deserialize, Serialize};
 use services::services::share::{ShareError, SharedTaskDetails};
 use ts_rs::TS;

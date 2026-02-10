@@ -13,6 +13,7 @@ import {
 } from 'lexical';
 import { Tag as TagIcon, FileText } from 'lucide-react';
 import { usePortalContainer } from '@/contexts/PortalContainerContext';
+import { useTypeaheadOpen } from '@/components/ui/wysiwyg/context/typeahead-open-context';
 import {
   searchTagsAndFiles,
   type SearchResultItem,
@@ -62,17 +63,13 @@ function getMenuPosition(anchorEl: HTMLElement) {
   return { top, bottom, left };
 }
 
-export function FileTagTypeaheadPlugin({
-  workspaceId,
-  projectId,
-}: {
-  workspaceId?: string;
-  projectId?: string;
-}) {
+export function FileTagTypeaheadPlugin({ repoIds }: { repoIds?: string[] }) {
   const [editor] = useLexicalComposerContext();
   const [options, setOptions] = useState<FileTagOption[]>([]);
   const lastMousePositionRef = useRef<{ x: number; y: number } | null>(null);
+  const searchRequestRef = useRef(0);
   const portalContainer = usePortalContainer();
+  const { setIsOpen } = useTypeaheadOpen();
 
   const onQueryChange = useCallback(
     (query: string | null) => {
@@ -82,16 +79,22 @@ export function FileTagTypeaheadPlugin({
         return;
       }
 
+      const requestId = ++searchRequestRef.current;
+
       // Here query is a string, including possible empty string ''
-      searchTagsAndFiles(query, { workspaceId, projectId })
+      searchTagsAndFiles(query, { repoIds })
         .then((results) => {
+          if (requestId !== searchRequestRef.current) return;
           setOptions(results.map((r) => new FileTagOption(r)));
         })
         .catch((err) => {
+          if (requestId === searchRequestRef.current) {
+            setOptions([]);
+          }
           console.error('Failed to search tags/files', err);
         });
     },
-    [workspaceId, projectId]
+    [repoIds]
   );
 
   return (
@@ -109,6 +112,8 @@ export function FileTagTypeaheadPlugin({
       }}
       options={options}
       onQueryChange={onQueryChange}
+      onOpen={() => setIsOpen(true)}
+      onClose={() => setIsOpen(false)}
       onSelectOption={(option, nodeToReplace, closeMenu) => {
         editor.update(() => {
           if (!nodeToReplace) return;
@@ -133,6 +138,9 @@ export function FileTagTypeaheadPlugin({
             // Add a space after the inline code for better UX
             const spaceNode = $createTextNode(' ');
             fileNameNode.insertAfter(spaceNode);
+            // setFormat must be called AFTER insertion to prevent Lexical from
+            // re-applying adjacent node formatting during reconciliation
+            spaceNode.setFormat(0);
             spaceNode.select(1, 1); // Position cursor after the space
 
             // Step 2: Check if full path already exists at the bottom
@@ -163,6 +171,14 @@ export function FileTagTypeaheadPlugin({
               const pathNode = $createTextNode(fullPath);
               pathNode.toggleFormat('code');
               pathParagraph.append(pathNode);
+
+              // Add trailing space with cleared formatting to allow escaping inline code
+              const trailingSpace = $createTextNode(' ');
+              pathParagraph.append(trailingSpace);
+              // setFormat must be called AFTER append to prevent Lexical from
+              // re-applying adjacent node formatting during reconciliation
+              trailingSpace.setFormat(0);
+
               root.append(pathParagraph);
             }
           }
@@ -180,6 +196,7 @@ export function FileTagTypeaheadPlugin({
 
         const tagResults = options.filter((r) => r.item.type === 'tag');
         const fileResults = options.filter((r) => r.item.type === 'file');
+        const showFilesSection = fileResults.length > 0;
 
         return createPortal(
           <div
@@ -242,7 +259,7 @@ export function FileTagTypeaheadPlugin({
                 )}
 
                 {/* Files Section */}
-                {fileResults.length > 0 && (
+                {showFilesSection && (
                   <>
                     {tagResults.length > 0 && <div className="border-t my-1" />}
                     <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase">

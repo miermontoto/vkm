@@ -16,12 +16,14 @@ pub mod execution_processes;
 pub mod frontend;
 pub mod health;
 pub mod images;
+pub mod migration;
 pub mod oauth;
 pub mod organizations;
 pub mod pending_commits;
 pub mod projects;
 pub mod repo;
 pub mod scratch;
+pub mod search;
 pub mod sessions;
 pub mod shared_tasks;
 pub mod tags;
@@ -49,6 +51,8 @@ pub fn router(deployment: DeploymentImpl) -> IntoMakeService<Router> {
         .merge(events::router(&deployment))
         .merge(approvals::router())
         .merge(scratch::router(&deployment))
+        .merge(search::router(&deployment))
+        .merge(migration::router())
         .merge(sessions::router(&deployment))
         .merge(pending_commits::router())
         .merge(terminal::router())

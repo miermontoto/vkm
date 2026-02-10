@@ -23,6 +23,12 @@ pub enum OpencodeExecutorEvent {
         tool_call_id: String,
         status: ApprovalStatus,
     },
+    SlashCommandResult {
+        message: String,
+    },
+    SystemMessage {
+        message: String,
+    },
     Error {
         message: String,
     },

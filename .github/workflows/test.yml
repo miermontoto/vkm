@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - .github/workflows/**
+      - '!.github/workflows/test.yml'
   push:
     branches:
       - main
@@ -19,6 +22,8 @@ env:
   CARGO_TERM_COLOR: always
   NODE_VERSION: 22
   PNPM_VERSION: 10.13.1
+  RUST_TOOLCHAIN: nightly-2025-12-04
+  RUNNER_LABEL: &runner_label blacksmith-16vcpu-ubuntu-2404
 
 jobs:
   test:
@@ -76,8 +81,6 @@ jobs:
         run: cd frontend && npm run build
         env:
           NODE_OPTIONS: --max-old-space-size=8192
-
-      - name: Checks
         run: |
           cargo fmt --all -- --check
           npm run generate-types:check

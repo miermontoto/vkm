@@ -1,3 +1,14 @@
+[build]
+# deshabilitado para evitar acumulación infinita de cache (241GB+)
+incremental = false
+
+[net]
+git-fetch-with-cli = true
+
+[env]
+# necesario para compilar el remote crate sin conexión a Postgres
+SQLX_OFFLINE = "true"
+
 [target.x86_64-apple-darwin]
 rustflags = [
     "-C", "link-arg=-framework",

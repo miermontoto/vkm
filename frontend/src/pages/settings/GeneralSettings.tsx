@@ -579,9 +579,12 @@ export function GeneralSettings() {
                   <>
                     {t('settings.general.git.branchPrefix.preview')}{' '}
                     <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                      {t('settings.general.git.branchPrefix.previewWithPrefix', {
-                        prefix: draft.git_branch_prefix,
-                      })}
+                      {t(
+                        'settings.general.git.branchPrefix.previewWithPrefix',
+                        {
+                          prefix: draft.git_branch_prefix,
+                        }
+                      )}
                     </code>
                   </>
                 ) : (
@@ -603,7 +606,9 @@ export function GeneralSettings() {
                 <Input
                   id="workspace-dir"
                   type="text"
-                  placeholder={t('settings.general.git.workspaceDir.placeholder')}
+                  placeholder={t(
+                    'settings.general.git.workspaceDir.placeholder'
+                  )}
                   value={draft?.workspace_dir ?? ''}
                   onChange={(e) => {
                     const value = e.target.value;
@@ -641,17 +646,23 @@ export function GeneralSettings() {
               label={t('settings.general.git.autoCommit.label')}
               helper={t('settings.general.git.autoCommit.helper')}
               value={draft?.git_auto_commit_enabled ?? true}
-              onChange={(value) => updateDraft({ git_auto_commit_enabled: value })}
+              onChange={(value) =>
+                updateDraft({ git_auto_commit_enabled: value })
+              }
               options={[
                 {
                   value: true,
                   label: t('settings.general.git.autoCommit.options.enabled'),
-                  description: t('settings.general.git.autoCommit.options.enabledDescription'),
+                  description: t(
+                    'settings.general.git.autoCommit.options.enabledDescription'
+                  ),
                 },
                 {
                   value: false,
                   label: t('settings.general.git.autoCommit.options.disabled'),
-                  description: t('settings.general.git.autoCommit.options.disabledDescription'),
+                  description: t(
+                    'settings.general.git.autoCommit.options.disabledDescription'
+                  ),
                 },
               ]}
             />
@@ -670,19 +681,33 @@ export function GeneralSettings() {
                   <div className="grid gap-3">
                     <div
                       className={`relative flex items-start space-x-3 rounded-lg border-2 p-4 transition-all cursor-pointer hover:bg-accent/50 ${
-                        (draft?.git_commit_title_mode ?? 'AgentSummary') === 'AgentSummary'
+                        (draft?.git_commit_title_mode ?? 'AgentSummary') ===
+                        'AgentSummary'
                           ? 'border-primary bg-accent'
                           : 'border-border bg-card'
                       }`}
-                      onClick={() => updateDraft({ git_commit_title_mode: 'AgentSummary' })}
+                      onClick={() =>
+                        updateDraft({ git_commit_title_mode: 'AgentSummary' })
+                      }
                     >
-                      <RadioGroupItem value="AgentSummary" id="commit-title-agent" className="mt-0.5" />
+                      <RadioGroupItem
+                        value="AgentSummary"
+                        id="commit-title-agent"
+                        className="mt-0.5"
+                      />
                       <div className="flex-1 min-w-0">
-                        <Label htmlFor="commit-title-agent" className="cursor-pointer font-normal">
-                          {t('settings.general.git.commitTitleMode.options.agentSummary')}
+                        <Label
+                          htmlFor="commit-title-agent"
+                          className="cursor-pointer font-normal"
+                        >
+                          {t(
+                            'settings.general.git.commitTitleMode.options.agentSummary'
+                          )}
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {t('settings.general.git.commitTitleMode.options.agentSummaryDescription')}
+                          {t(
+                            'settings.general.git.commitTitleMode.options.agentSummaryDescription'
+                          )}
                         </p>
                       </div>
                     </div>
@@ -693,18 +718,35 @@ export function GeneralSettings() {
                           ? 'border-primary bg-accent'
                           : 'border-border bg-card'
                       }`}
-                      onClick={() => updateDraft({ git_commit_title_mode: 'AiGenerated' })}
+                      onClick={() =>
+                        updateDraft({ git_commit_title_mode: 'AiGenerated' })
+                      }
                     >
-                      <RadioGroupItem value="AiGenerated" id="commit-title-ai" className="mt-0.5" />
+                      <RadioGroupItem
+                        value="AiGenerated"
+                        id="commit-title-ai"
+                        className="mt-0.5"
+                      />
                       <div className="flex-1 min-w-0">
-                        <Label htmlFor="commit-title-ai" className="cursor-pointer font-normal flex items-center gap-2">
-                          <span>{t('settings.general.git.commitTitleMode.options.aiGenerated')}</span>
+                        <Label
+                          htmlFor="commit-title-ai"
+                          className="cursor-pointer font-normal flex items-center gap-2"
+                        >
+                          <span>
+                            {t(
+                              'settings.general.git.commitTitleMode.options.aiGenerated'
+                            )}
+                          </span>
                           <Badge variant="outline" className="text-xs">
-                            {t('settings.general.git.commitTitleMode.notImplemented')}
+                            {t(
+                              'settings.general.git.commitTitleMode.notImplemented'
+                            )}
                           </Badge>
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {t('settings.general.git.commitTitleMode.options.aiGeneratedDescription')}
+                          {t(
+                            'settings.general.git.commitTitleMode.options.aiGeneratedDescription'
+                          )}
                         </p>
                       </div>
                     </div>
@@ -715,15 +757,28 @@ export function GeneralSettings() {
                           ? 'border-primary bg-accent'
                           : 'border-border bg-card'
                       }`}
-                      onClick={() => updateDraft({ git_commit_title_mode: 'Manual' })}
+                      onClick={() =>
+                        updateDraft({ git_commit_title_mode: 'Manual' })
+                      }
                     >
-                      <RadioGroupItem value="Manual" id="commit-title-manual" className="mt-0.5" />
+                      <RadioGroupItem
+                        value="Manual"
+                        id="commit-title-manual"
+                        className="mt-0.5"
+                      />
                       <div className="flex-1 min-w-0">
-                        <Label htmlFor="commit-title-manual" className="cursor-pointer font-normal">
-                          {t('settings.general.git.commitTitleMode.options.manual')}
+                        <Label
+                          htmlFor="commit-title-manual"
+                          className="cursor-pointer font-normal"
+                        >
+                          {t(
+                            'settings.general.git.commitTitleMode.options.manual'
+                          )}
                         </Label>
                         <p className="text-sm text-muted-foreground mt-1">
-                          {t('settings.general.git.commitTitleMode.options.manualDescription')}
+                          {t(
+                            'settings.general.git.commitTitleMode.options.manualDescription'
+                          )}
                         </p>
                       </div>
                     </div>
@@ -742,15 +797,21 @@ export function GeneralSettings() {
                         onCheckedChange={(checked: boolean) => {
                           if (checked) {
                             updateDraft({
-                              git_commit_title_prompt: DEFAULT_COMMIT_TITLE_PROMPT,
+                              git_commit_title_prompt:
+                                DEFAULT_COMMIT_TITLE_PROMPT,
                             });
                           } else {
                             updateDraft({ git_commit_title_prompt: null });
                           }
                         }}
                       />
-                      <Label htmlFor="use-custom-commit-prompt" className="cursor-pointer">
-                        {t('settings.general.git.commitTitleMode.customPrompt.useCustom')}
+                      <Label
+                        htmlFor="use-custom-commit-prompt"
+                        className="cursor-pointer"
+                      >
+                        {t(
+                          'settings.general.git.commitTitleMode.customPrompt.useCustom'
+                        )}
                       </Label>
                     </div>
                     <textarea
@@ -760,14 +821,19 @@ export function GeneralSettings() {
                           ? 'opacity-50 cursor-not-allowed'
                           : ''
                       }`}
-                      value={draft?.git_commit_title_prompt ?? DEFAULT_COMMIT_TITLE_PROMPT}
+                      value={
+                        draft?.git_commit_title_prompt ??
+                        DEFAULT_COMMIT_TITLE_PROMPT
+                      }
                       disabled={draft?.git_commit_title_prompt == null}
                       onChange={(e) =>
                         updateDraft({ git_commit_title_prompt: e.target.value })
                       }
                     />
                     <p className="text-sm text-muted-foreground">
-                      {t('settings.general.git.commitTitleMode.customPrompt.helper')}
+                      {t(
+                        'settings.general.git.commitTitleMode.customPrompt.helper'
+                      )}
                     </p>
                   </div>
                 )}
@@ -798,17 +864,27 @@ export function GeneralSettings() {
               label={t('settings.general.tasks.redirectToAttempt.label')}
               helper={t('settings.general.tasks.redirectToAttempt.helper')}
               value={draft?.redirect_to_attempt_on_create ?? true}
-              onChange={(value) => updateDraft({ redirect_to_attempt_on_create: value })}
+              onChange={(value) =>
+                updateDraft({ redirect_to_attempt_on_create: value })
+              }
               options={[
                 {
                   value: true,
-                  label: t('settings.general.tasks.redirectToAttempt.options.enabled'),
-                  description: t('settings.general.tasks.redirectToAttempt.options.enabledDescription'),
+                  label: t(
+                    'settings.general.tasks.redirectToAttempt.options.enabled'
+                  ),
+                  description: t(
+                    'settings.general.tasks.redirectToAttempt.options.enabledDescription'
+                  ),
                 },
                 {
                   value: false,
-                  label: t('settings.general.tasks.redirectToAttempt.options.disabled'),
-                  description: t('settings.general.tasks.redirectToAttempt.options.disabledDescription'),
+                  label: t(
+                    'settings.general.tasks.redirectToAttempt.options.disabled'
+                  ),
+                  description: t(
+                    'settings.general.tasks.redirectToAttempt.options.disabledDescription'
+                  ),
                 },
               ]}
             />
@@ -837,17 +913,27 @@ export function GeneralSettings() {
               label={t('settings.general.pullRequests.autoPr.label')}
               helper={t('settings.general.pullRequests.autoPr.helper')}
               value={draft?.auto_pr_on_review_enabled ?? false}
-              onChange={(value) => updateDraft({ auto_pr_on_review_enabled: value })}
+              onChange={(value) =>
+                updateDraft({ auto_pr_on_review_enabled: value })
+              }
               options={[
                 {
                   value: true,
-                  label: t('settings.general.pullRequests.autoPr.options.enabled'),
-                  description: t('settings.general.pullRequests.autoPr.options.enabledDescription'),
+                  label: t(
+                    'settings.general.pullRequests.autoPr.options.enabled'
+                  ),
+                  description: t(
+                    'settings.general.pullRequests.autoPr.options.enabledDescription'
+                  ),
                 },
                 {
                   value: false,
-                  label: t('settings.general.pullRequests.autoPr.options.disabled'),
-                  description: t('settings.general.pullRequests.autoPr.options.disabledDescription'),
+                  label: t(
+                    'settings.general.pullRequests.autoPr.options.disabled'
+                  ),
+                  description: t(
+                    'settings.general.pullRequests.autoPr.options.disabledDescription'
+                  ),
                 },
               ]}
             />
@@ -861,13 +947,21 @@ export function GeneralSettings() {
               options={[
                 {
                   value: true,
-                  label: t('settings.general.pullRequests.autoPrDraft.options.enabled'),
-                  description: t('settings.general.pullRequests.autoPrDraft.options.enabledDescription'),
+                  label: t(
+                    'settings.general.pullRequests.autoPrDraft.options.enabled'
+                  ),
+                  description: t(
+                    'settings.general.pullRequests.autoPrDraft.options.enabledDescription'
+                  ),
                 },
                 {
                   value: false,
-                  label: t('settings.general.pullRequests.autoPrDraft.options.disabled'),
-                  description: t('settings.general.pullRequests.autoPrDraft.options.disabledDescription'),
+                  label: t(
+                    'settings.general.pullRequests.autoPrDraft.options.disabled'
+                  ),
+                  description: t(
+                    'settings.general.pullRequests.autoPrDraft.options.disabledDescription'
+                  ),
                 },
               ]}
             />
@@ -888,17 +982,27 @@ export function GeneralSettings() {
               label={t('settings.general.pullRequests.autoDescription.label')}
               helper={t('settings.general.pullRequests.autoDescription.helper')}
               value={draft?.pr_auto_description_enabled ?? false}
-              onChange={(value) => updateDraft({ pr_auto_description_enabled: value })}
+              onChange={(value) =>
+                updateDraft({ pr_auto_description_enabled: value })
+              }
               options={[
                 {
                   value: true,
-                  label: t('settings.general.pullRequests.autoDescription.options.enabled'),
-                  description: t('settings.general.pullRequests.autoDescription.options.enabledDescription'),
+                  label: t(
+                    'settings.general.pullRequests.autoDescription.options.enabled'
+                  ),
+                  description: t(
+                    'settings.general.pullRequests.autoDescription.options.enabledDescription'
+                  ),
                 },
                 {
                   value: false,
-                  label: t('settings.general.pullRequests.autoDescription.options.disabled'),
-                  description: t('settings.general.pullRequests.autoDescription.options.disabledDescription'),
+                  label: t(
+                    'settings.general.pullRequests.autoDescription.options.disabled'
+                  ),
+                  description: t(
+                    'settings.general.pullRequests.autoDescription.options.disabledDescription'
+                  ),
                 },
               ]}
             />
@@ -911,7 +1015,8 @@ export function GeneralSettings() {
                   onCheckedChange={(checked: boolean) => {
                     if (checked) {
                       updateDraft({
-                        pr_auto_description_prompt: DEFAULT_PR_DESCRIPTION_PROMPT,
+                        pr_auto_description_prompt:
+                          DEFAULT_PR_DESCRIPTION_PROMPT,
                       });
                     } else {
                       updateDraft({ pr_auto_description_prompt: null });

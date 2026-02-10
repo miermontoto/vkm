@@ -57,6 +57,9 @@ async fn main() -> Result<(), VibeKanbanError> {
         .await
         .map_err(DeploymentError::from)?;
     deployment.spawn_pr_monitor_service().await;
+    deployment
+        .track_if_analytics_allowed("session_start", serde_json::json!({}))
+        .await;
 
     // Pre-warm file search cache for most active projects
     let deployment_for_cache = deployment.clone();
@@ -106,14 +109,13 @@ async fn main() -> Result<(), VibeKanbanError> {
     let listener = tokio::net::TcpListener::from_std(socket.into())?;
     let actual_port = listener.local_addr()?.port(); // get → 53427 (example)
 
-    // Write port file for discovery if prod, warn on fail
-    if let Err(e) = write_port_file(actual_port).await {
-        tracing::warn!("Failed to write port file: {}", e);
-    }
-
     tracing::info!("Server running on http://{host}:{actual_port}");
 
+    // Production only: write port file for extension discovery and open browser
     if !cfg!(debug_assertions) {
+        if let Err(e) = write_port_file(actual_port).await {
+            tracing::warn!("Failed to write port file: {}", e);
+        }
         tracing::info!("Opening browser...");
         tokio::spawn(async move {
             if let Err(e) = open_browser(&format!("http://127.0.0.1:{actual_port}")).await {

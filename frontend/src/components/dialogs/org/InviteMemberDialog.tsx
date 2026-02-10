@@ -23,6 +23,9 @@ import { useOrganizationMutations } from '@/hooks/useOrganizationMutations';
 import { MemberRole } from 'shared/types';
 import { useTranslation } from 'react-i18next';
 import { defineModal } from '@/lib/modals';
+import { ApiError } from '@/lib/api';
+import { REMOTE_API_URL } from '@/lib/remoteApi';
+import { ArrowSquareOut } from '@phosphor-icons/react';
 
 export type InviteMemberResult = {
   action: 'invited' | 'canceled';
@@ -40,6 +43,7 @@ const InviteMemberDialogImpl = NiceModal.create<InviteMemberDialogProps>(
     const [email, setEmail] = useState('');
     const [role, setRole] = useState<MemberRole>(MemberRole.MEMBER);
     const [error, setError] = useState<string | null>(null);
+    const [isSubscriptionRequired, setIsSubscriptionRequired] = useState(false);
 
     const { createInvitation } = useOrganizationMutations({
       onInviteSuccess: () => {
@@ -47,9 +51,15 @@ const InviteMemberDialogImpl = NiceModal.create<InviteMemberDialogProps>(
         modal.hide();
       },
       onInviteError: (err) => {
-        setError(
-          err instanceof Error ? err.message : 'Failed to send invitation'
-        );
+        if (err instanceof ApiError && err.statusCode === 402) {
+          setIsSubscriptionRequired(true);
+          setError(t('inviteDialog.subscriptionRequired'));
+        } else {
+          setIsSubscriptionRequired(false);
+          setError(
+            err instanceof Error ? err.message : 'Failed to send invitation'
+          );
+        }
       },
     });
 
@@ -59,6 +69,7 @@ const InviteMemberDialogImpl = NiceModal.create<InviteMemberDialogProps>(
         setEmail('');
         setRole(MemberRole.MEMBER);
         setError(null);
+        setIsSubscriptionRequired(false);
       }
     }, [modal.visible]);
 
@@ -164,8 +175,30 @@ const InviteMemberDialogImpl = NiceModal.create<InviteMemberDialogProps>(
             </div>
 
             {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
+              <Alert
+                variant={isSubscriptionRequired ? 'default' : 'destructive'}
+              >
+                <AlertDescription>
+                  {error}
+                  {isSubscriptionRequired && REMOTE_API_URL && (
+                    <div className="mt-2">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {t('inviteDialog.upgradePrompt')}
+                      </p>
+                      <Button
+                        onClick={() =>
+                          window.open(
+                            `${REMOTE_API_URL}/upgrade?org_id=${organizationId}`,
+                            '_blank'
+                          )
+                        }
+                      >
+                        {t('inviteDialog.upgradeButton')}
+                        <ArrowSquareOut className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </AlertDescription>
               </Alert>
             )}
           </div>

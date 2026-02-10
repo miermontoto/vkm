@@ -5,13 +5,9 @@ import { useReview, type ReviewComment } from '@/contexts/ReviewProvider';
 
 interface ReviewCommentRendererProps {
   comment: ReviewComment;
-  projectId?: string;
 }
 
-export function ReviewCommentRenderer({
-  comment,
-  projectId,
-}: ReviewCommentRendererProps) {
+export function ReviewCommentRenderer({ comment }: ReviewCommentRendererProps) {
   const { deleteComment, updateComment } = useReview();
   const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(comment.text);
@@ -45,7 +41,6 @@ export function ReviewCommentRenderer({
           onChange={setEditText}
           placeholder="Edit comment... (type @ to search files)"
           className="w-full bg-background text-foreground text-sm font-mono min-h-[60px]"
-          projectId={projectId}
           onCmdEnter={handleSave}
           autoFocus
         />

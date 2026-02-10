@@ -3,14 +3,12 @@ mod publisher;
 mod status;
 
 pub use config::ShareConfig;
+use git::GitServiceError;
 pub use publisher::{SharePublisher, SharedTaskDetails};
 use thiserror::Error;
 use uuid::Uuid;
 
-use crate::{
-    RemoteClientError,
-    services::{git::GitServiceError, git_host::GitHostError},
-};
+use crate::{RemoteClientError, services::git_host::GitHostError};
 
 #[derive(Debug, Error)]
 pub enum ShareError {

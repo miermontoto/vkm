@@ -14,7 +14,8 @@
     "close": "Close",
     "replay": "Replay",
     "discard": "Discard",
-    "addItem": "Add Item"
+    "addItem": "Add Item",
+    "reply": "Reply"
   },
   "form": {
     "notSpecified": "Not specified",
@@ -28,6 +29,8 @@
     "success": "Success",
     "reconnecting": "Reconnecting"
   },
+  "ok": "OK",
+  "error": "Error",
   "language": {
     "browserDefault": "Browser Default"
   },
@@ -48,6 +51,7 @@
     "taskCompleted": "Task completed",
     "ran": "Ran",
     "tool": "Tool",
+    "thinking": "Thinking",
     "toolSummary": {
       "read": "Read {{path}}",
       "searched": "Searched for \"{{query}}\"",
@@ -56,7 +60,10 @@
       "createdTask": "Created task: {{description}}",
       "todoOperation": "{{operation}} todos"
     },
-    "fixScript": "Fix Script"
+    "fixScript": "Fix Script",
+    "subagent": {
+      "defaultType": "Subagent"
+    }
   },
   "folderPicker": {
     "legend": "Click folder names to navigate • Use action buttons to select",
@@ -91,11 +98,16 @@
     "menuItem": "Organization",
     "loadingPlaceholder": "Loading organizations...",
     "selectPlaceholder": "Select an organization",
-    "currentBadge": " (current)"
+    "currentBadge": " (current)",
+    "organizations": "Organizations",
+    "createOrganization": "Create organization",
+    "orgSettings": "Organization settings",
+    "migrate": "Migrate"
   },
   "navbar": {
     "tryNewUI": "try the new UI"
   },
+  "signIn": "Sign in",
   "signOut": "Sign out",
   "devMode": {
     "banner": "Development Mode - This is a development build"
@@ -196,7 +208,9 @@
   "commandBar": {
     "noResults": "No results found.",
     "back": "Back",
-    "defaultPlaceholder": "Type a command or search..."
+    "defaultPlaceholder": "Type a command or search...",
+    "selectBranch": "Select Branch",
+    "selectBranchFor": "Select Branch for {{repoName}}"
   },
   "chatBox": {
     "variants": "Variants",
@@ -236,7 +250,64 @@
     "tags": "Tags",
     "files": "Files",
     "commands": "Commands",
+    "chooseRepo": "Choose repo",
+    "selectedRepo": "Selected repo: {{repoName}}",
+    "missingRepo": "Selected repo is no longer available.",
     "noTagsOrFiles": "No tags or files found",
     "noCommands": "No commands available for this agent."
+  },
+  "kanban": {
+    "noStatusesFound": "No statuses found for this project",
+    "noVisibleStatuses": "All statuses are hidden. Use display settings or switch to another tab to view issues.",
+    "noProjectFound": "No project found",
+    "noOrganizationFound": "No organization found",
+    "unassigned": "Unassigned",
+    "noTagsAvailable": "No tags available",
+    "createNewIssue": "Create new issue",
+    "createNewTag": "Create new tag",
+    "searchTags": "Search tags...",
+    "selectColorFor": "Select color for",
+    "createTag": "Create",
+    "filesCount": "{{count}} Files",
+    "noPrCreated": "No PR created",
+    "noCommentsYet": "No comments yet",
+    "createdBy": "Created by",
+    "comments": "Comments",
+    "enterCommentPlaceholder": "Enter your comment here...",
+    "subIssues": "Sub-issues",
+    "noSubIssues": "No sub-issues",
+    "markIndependentIssue": "Mark as independent issue",
+    "parentIssue": "Parent",
+    "subIssueIndicator": "↳",
+    "showSubIssues": "Show sub-issues",
+    "viewTabs": {
+      "active": "Active",
+      "all": "All"
+    },
+    "loginRequired": {
+      "title": "Sign in required",
+      "description": "Please sign in to view this project.",
+      "action": "Sign in"
+    }
+  },
+  "createMode": {
+    "headings": {
+      "repoStep": "Which repositories would you like to work on?",
+      "chatStep": "What would you like to work on?"
+    },
+    "repoPicker": {
+      "actions": {
+        "recent": "Recent",
+        "browse": "Browse",
+        "create": "Create"
+      }
+    }
+  },
+  "syncError": {
+    "networkErrors": "Network Errors",
+    "streamsAffected": "{{count}} stream affected",
+    "streamsAffected_other": "{{count}} streams affected",
+    "status": "(status {{status}})",
+    "refreshPage": "Refresh Page"
   }
 }

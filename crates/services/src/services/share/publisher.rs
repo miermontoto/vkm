@@ -1,12 +1,12 @@
+use api_types::{
+    AssignSharedTaskRequest, CreateSharedTaskRequest, SharedTaskResponse, UpdateSharedTaskRequest,
+};
 use db::{
     DBService,
     models::{
         project::Project,
         task::{CreateTask, Task, TaskStatus},
     },
-};
-use remote::routes::tasks::{
-    AssignSharedTaskRequest, CreateSharedTaskRequest, SharedTaskResponse, UpdateSharedTaskRequest,
 };
 use uuid::Uuid;
 

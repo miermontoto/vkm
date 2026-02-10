@@ -1,6 +1,7 @@
 // streamJsonPatchEntries.ts - WebSocket JSON patch streaming utility
-import { applyPatch, type Operation } from 'rfc6902';
+import type { Operation } from 'rfc6902';
 import { buildWebSocketUrl, closeWebSocket } from './websocketUtils';
+import { applyUpsertPatch } from '@/utils/jsonPatch';
 
 type PatchContainer<E = unknown> = { entries: E[] };
 
@@ -71,7 +72,7 @@ export function streamJsonPatchEntries<E = unknown>(
 
         // Apply to a working copy (applyPatch mutates)
         const next = structuredClone(snapshot);
-        applyPatch(next as unknown as object, ops);
+        applyUpsertPatch(next, ops);
 
         snapshot = next;
         notify();

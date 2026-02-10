@@ -91,6 +91,8 @@ pub enum CallbackResult {
 pub struct RedeemResponse {
     pub access_token: String,
     pub refresh_token: String,
+    pub user_id: Uuid,
+    pub email: String,
 }
 
 pub struct OAuthHandoffService {
@@ -379,6 +381,8 @@ impl OAuthHandoffService {
         Ok(RedeemResponse {
             access_token: tokens.access_token,
             refresh_token: tokens.refresh_token,
+            user_id: user.id,
+            email: user.email,
         })
     }
 
@@ -467,7 +471,7 @@ impl OAuthHandoffService {
     }
 }
 
-type IdentityUser = crate::db::users::User;
+type IdentityUser = api_types::User;
 
 fn is_expired(record: &OAuthHandoff) -> bool {
     record.expires_at <= Utc::now()

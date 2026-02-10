@@ -128,6 +128,19 @@
       "action": "接続"
     }
   },
+  "rebaseInProgress": {
+    "dialog": {
+      "title": "リベース進行中",
+      "description": "{{targetBranch}}へのリベースが競合なしで進行中です。続行方法を選択してください。",
+      "hint": "リベースを続行して完了するか、中止して以前の状態に戻すことができます。",
+      "continue": "リベースを続行",
+      "continuing": "続行中...",
+      "abort": "リベースを中止",
+      "aborting": "中止中...",
+      "continueError": "リベースの続行に失敗しました。未解決の競合がある可能性があります。",
+      "abortError": "リベースの中止に失敗しました。もう一度お試しください。"
+    }
+  },
   "createPrDialog": {
     "title": "プルリクエストを作成",
     "description": "このタスク試行のプルリクエストを作成します。",
@@ -224,6 +237,12 @@
     "viewModes": {
       "inline": "Inline view",
       "split": "Split view"
+    },
+    "largeDiff": {
+      "title": "大きなファイル",
+      "linesChanged": "{{count}} 行が変更されました",
+      "loadAnyway": "差分を読み込む",
+      "warning": "大きな差分はブラウザを遅くする可能性があります。"
     }
   },
   "empty": {
@@ -245,8 +264,10 @@
     "queuedMessage": "メッセージがキューに追加されました - 現在の実行が完了すると実行されます",
     "runSetupScript": "セットアップスクリプトを実行",
     "runCleanupScript": "クリーンアップスクリプトを実行",
+    "runArchiveScript": "アーカイブスクリプトを実行",
     "noSetupScript": "このプロジェクトにセットアップスクリプトが設定されていません",
     "noCleanupScript": "このプロジェクトにクリーンアップスクリプトが設定されていません",
+    "noArchiveScript": "このプロジェクトにアーカイブスクリプトが設定されていません",
     "scriptsDisabledWhileRunning": "プロセス実行中はスクリプトを実行できません"
   },
   "git": {
@@ -596,9 +617,12 @@
   },
   "restoreLogsDialog": {
     "title": "リトライを確認",
+    "titleReset": "リセットを確認",
     "historyChange": {
       "title": "履歴の変更",
       "willDelete": "このプロセスを削除します",
+      "willDeleteProcesses_one": "{{count}}件のプロセスを削除します",
+      "willDeleteProcesses_other": "{{count}}件のプロセスを削除します",
       "andLaterProcesses_one": "および後続の{{count}}件のプロセス",
       "andLaterProcesses_other": "および後続の{{count}}件のプロセス",
       "fromHistory": "を履歴から削除します。",
@@ -634,7 +658,8 @@
       "uncommittedPresentHint": "未コミットの変更があります。強制リセットをオンにするか、コミット/スタッシュしてから続行してください。"
     },
     "buttons": {
-      "retry": "リトライ"
+      "retry": "リトライ",
+      "reset": "リセット"
     }
   },
   "conversation": {
@@ -665,7 +690,9 @@
       "approve": "承認",
       "clearReviewComments": "レビューコメントをクリア",
       "edit": "メッセージを編集",
-      "scrollToPreviousMessage": "Go to previous message"
+      "scrollToPreviousMessage": "Go to previous message",
+      "reset": "リセット",
+      "resetTooltip": "この時点にリセット"
     },
     "approval": {
       "conflictWarning": "競合するファイルは手動で解決する必要があります",
@@ -678,6 +705,13 @@
       "completedSuccessfully": "正常に完了しました",
       "exitCode": "終了コード: {{code}}",
       "running": "実行中..."
+    },
+    "scriptPlaceholder": {
+      "setupTitle": "セットアップスクリプト",
+      "setupDescription": "セットアップスクリプトが設定されていません。セットアップスクリプトはコーディングエージェントの開始前に実行されます。",
+      "cleanupTitle": "クリーンアップスクリプト",
+      "cleanupDescription": "クリーンアップスクリプトが設定されていません。クリーンアップスクリプトはコーディングエージェントの終了後に実行されます。",
+      "configure": "設定"
     },
     "unableToRenderDiff": "差分を表示できません。",
     "updatedTodos": "更新されたTodo",
@@ -746,6 +780,7 @@
     "title": "スクリプトを修正",
     "setupScriptTitle": "セットアップスクリプトを修正",
     "cleanupScriptTitle": "クリーンアップスクリプトを修正",
+    "archiveScriptTitle": "アーカイブスクリプトを修正",
     "devServerTitle": "開発サーバースクリプトを修正",
     "scriptLabel": "スクリプト（編集）",
     "logsLabel": "最後の実行ログ",

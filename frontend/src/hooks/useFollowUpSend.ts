@@ -74,6 +74,7 @@ export function useFollowUpSend({
               type: 'CodingAgentFollowUpRequest',
               prompt: finalPrompt,
               session_id: sessionId,
+              reset_to_message_id: null,
               executor_profile_id: {
                 executor: BaseCodingAgent.CLAUDE_CODE,
                 variant,

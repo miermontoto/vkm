@@ -65,7 +65,9 @@ export function BinaryToggle({
                     ? 'border-primary bg-accent'
                     : 'border-border bg-card'
                 )}
-                onClick={() => !isDisabled && handleValueChange(optionStringValue)}
+                onClick={() =>
+                  !isDisabled && handleValueChange(optionStringValue)
+                }
               >
                 <RadioGroupItem
                   value={optionStringValue}

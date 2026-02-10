@@ -175,3 +175,16 @@ pub fn replace_normalized_entry(
 ) {
     upsert_normalized_entry(msg_store, index, normalized_entry, false);
 }
+
+pub fn slash_commands(
+    commands: Vec<crate::executors::SlashCommandDescription>,
+    discovering: bool,
+    error: Option<String>,
+) -> Patch {
+    from_value(json!([
+        {"op": "replace", "path": "/commands", "value": commands},
+        {"op": "replace", "path": "/discovering", "value": discovering},
+        {"op": "replace", "path": "/error", "value": error},
+    ]))
+    .unwrap_or_default()
+}

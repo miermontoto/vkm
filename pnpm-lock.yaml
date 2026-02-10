@@ -3843,10 +3843,6 @@ snapshots:
 
   '@floating-ui/core@0.6.2': {}
 
-  '@floating-ui/core@1.7.1':
-    dependencies:
-      '@floating-ui/utils': 0.2.10
-
   '@floating-ui/core@1.7.3':
     dependencies:
       '@floating-ui/utils': 0.2.10

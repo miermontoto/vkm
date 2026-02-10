@@ -37,7 +37,9 @@ use executors::{
     logs::{NormalizedEntry, NormalizedEntryError, NormalizedEntryType, utils::ConversationPatch},
     profile::{ExecutorConfigs, ExecutorProfileId},
 };
-use futures::{StreamExt, future};
+use futures::{StreamExt, future, stream::BoxStream};
+use git::{GitService, GitServiceError};
+use json_patch::Patch;
 use sqlx::Error as SqlxError;
 use thiserror::Error;
 use tokio::{sync::RwLock, task::JoinHandle};
@@ -49,9 +51,7 @@ use utils::{
 use uuid::Uuid;
 
 use crate::services::{
-    git::{GitService, GitServiceError},
-    notification::NotificationService,
-    workspace_manager::WorkspaceError as WorkspaceManagerError,
+    notification::NotificationService, workspace_manager::WorkspaceError as WorkspaceManagerError,
     worktree_manager::WorktreeError,
 };
 pub type ContainerRef = String;
@@ -113,6 +113,63 @@ pub trait ContainerService {
     fn notification_service(&self) -> &NotificationService;
 
     fn workspace_to_current_dir(&self, workspace: &Workspace) -> PathBuf;
+
+    async fn available_agent_slash_commands(
+        &self,
+        executor_profile_id: ExecutorProfileId,
+        workspace_id: Option<Uuid>,
+        repo_id: Option<Uuid>,
+    ) -> Result<Option<BoxStream<'static, Patch>>, ContainerError> {
+        let agent_workdir = if let Some(workspace_id) = workspace_id {
+            let workspace = Workspace::find_by_id(&self.db().pool, workspace_id)
+                .await?
+                .ok_or(SqlxError::RowNotFound)?;
+
+            let container_ref = match workspace.container_ref.as_deref() {
+                Some(container_ref) if !container_ref.is_empty() => container_ref,
+                _ => &self.ensure_container_exists(&workspace).await?,
+            };
+
+            if container_ref.is_empty() {
+                return Err(ContainerError::Other(anyhow!("Workspace path is empty")));
+            }
+
+            let workspace_path = PathBuf::from(container_ref);
+            match workspace.agent_working_dir.as_deref() {
+                Some(dir) if !dir.is_empty() => Some(workspace_path.join(dir)),
+                _ => Some(workspace_path),
+            }
+        } else if let Some(repo_id) = repo_id {
+            Repo::find_by_id(&self.db().pool, repo_id)
+                .await
+                .ok()
+                .flatten()
+                .map(|repo| repo.path)
+        } else {
+            None
+        }
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+
+        #[cfg(feature = "qa-mode")]
+        {
+            let _ = executor_profile_id;
+            let agent = QaMockExecutor;
+            let stream = agent.available_slash_commands(&agent_workdir).await?;
+            return Ok(Some(stream));
+        }
+        #[cfg(not(feature = "qa-mode"))]
+        {
+            let executor =
+                ExecutorConfigs::get_cached().get_coding_agent_or_default(&executor_profile_id);
+
+            let stream = executor.available_slash_commands(&agent_workdir).await?;
+            Ok(Some(stream))
+        }
+    }
+
+    async fn store_db_stream_handle(&self, id: Uuid, handle: JoinHandle<()>);
+
+    async fn take_db_stream_handle(&self, id: &Uuid) -> Option<JoinHandle<()>>;
 
     async fn create(&self, workspace: &Workspace) -> Result<ContainerRef, ContainerError>;
 
@@ -437,6 +494,123 @@ pub trait ContainerService {
         Some(root_action)
     }
 
+    fn archive_actions_for_repos(&self, repos: &[Repo]) -> Option<ExecutorAction> {
+        let repos_with_archive: Vec<_> = repos
+            .iter()
+            .filter(|r| r.archive_script.is_some())
+            .collect();
+
+        if repos_with_archive.is_empty() {
+            return None;
+        }
+
+        let mut iter = repos_with_archive.iter();
+        let first = iter.next()?;
+        let mut root_action = ExecutorAction::new(
+            ExecutorActionType::ScriptRequest(ScriptRequest {
+                script: first.archive_script.clone().unwrap(),
+                language: ScriptRequestLanguage::Bash,
+                context: ScriptContext::ArchiveScript,
+                working_dir: Some(first.name.clone()),
+            }),
+            None,
+        );
+
+        for repo in iter {
+            root_action = root_action.append_action(ExecutorAction::new(
+                ExecutorActionType::ScriptRequest(ScriptRequest {
+                    script: repo.archive_script.clone().unwrap(),
+                    language: ScriptRequestLanguage::Bash,
+                    context: ScriptContext::ArchiveScript,
+                    working_dir: Some(repo.name.clone()),
+                }),
+                None,
+            ));
+        }
+
+        Some(root_action)
+    }
+
+    /// Attempts to run the archive script for a workspace if configured.
+    /// Silently returns Ok if no archive script is configured or if conditions aren't met.
+    async fn try_run_archive_script(&self, workspace_id: Uuid) -> Result<(), ContainerError> {
+        let pool = &self.db().pool;
+        let workspace = Workspace::find_by_id(pool, workspace_id)
+            .await?
+            .ok_or(ContainerError::Other(anyhow!("Workspace not found")))?;
+        if ExecutionProcess::has_running_non_dev_server_processes_for_workspace(pool, workspace.id)
+            .await
+            .unwrap_or(true)
+        {
+            return Ok(());
+        }
+        if self.ensure_container_exists(&workspace).await.is_err() {
+            return Ok(());
+        }
+        let repos = WorkspaceRepo::find_repos_for_workspace(pool, workspace.id).await?;
+        let Some(action) = self.archive_actions_for_repos(&repos) else {
+            return Ok(());
+        };
+        let session = match Session::find_latest_by_workspace_id(pool, workspace.id).await? {
+            Some(s) => s,
+            None => {
+                Session::create(
+                    pool,
+                    &CreateSession { executor: None },
+                    Uuid::new_v4(),
+                    workspace.id,
+                )
+                .await?
+            }
+        };
+        self.start_execution(
+            &workspace,
+            &session,
+            &action,
+            &ExecutionProcessRunReason::ArchiveScript,
+        )
+        .await?;
+
+        Ok(())
+    }
+
+    /// Archive a workspace: set archived flag, stop running dev servers, and run archive script.
+    async fn archive_workspace(&self, workspace_id: Uuid) -> Result<(), ContainerError> {
+        let pool = &self.db().pool;
+
+        Workspace::set_archived(pool, workspace_id, true).await?;
+
+        // Stop running dev servers
+        if let Ok(dev_servers) =
+            ExecutionProcess::find_running_dev_servers_by_workspace(pool, workspace_id).await
+        {
+            for dev_server in dev_servers {
+                if let Err(e) = self
+                    .stop_execution(&dev_server, ExecutionProcessStatus::Killed)
+                    .await
+                {
+                    tracing::error!(
+                        "Failed to stop dev server {} for workspace {}: {}",
+                        dev_server.id,
+                        workspace_id,
+                        e
+                    );
+                }
+            }
+        }
+
+        // Run archive script (silently skips if not configured)
+        if let Err(e) = self.try_run_archive_script(workspace_id).await {
+            tracing::error!(
+                "Failed to run archive script for workspace {}: {}",
+                workspace_id,
+                e
+            );
+        }
+
+        Ok(())
+    }
+
     fn setup_actions_for_repos(&self, repos: &[RepoWithName]) -> Option<ExecutorAction> {
         let repos_with_setup: Vec<_> = repos.iter().filter(|r| r.setup_script.is_some()).collect();
 
@@ -504,6 +678,81 @@ pub trait ContainerService {
             }
         }
         chained
+    }
+
+    /// Reset a session to a specific process: restore worktrees, stop processes, drop later processes.
+    async fn reset_session_to_process(
+        &self,
+        session_id: Uuid,
+        target_process_id: Uuid,
+        perform_git_reset: bool,
+        force_when_dirty: bool,
+    ) -> Result<(), ContainerError> {
+        let pool = &self.db().pool;
+
+        let process = ExecutionProcess::find_by_id(pool, target_process_id)
+            .await?
+            .ok_or_else(|| ContainerError::Other(anyhow!("Process not found")))?;
+        if process.session_id != session_id {
+            return Err(ContainerError::Other(anyhow!(
+                "Process does not belong to this session"
+            )));
+        }
+
+        let session = Session::find_by_id(pool, session_id)
+            .await?
+            .ok_or_else(|| ContainerError::Other(anyhow!("Session not found")))?;
+        let workspace = Workspace::find_by_id(pool, session.workspace_id)
+            .await?
+            .ok_or_else(|| ContainerError::Other(anyhow!("Workspace not found")))?;
+
+        let repos = WorkspaceRepo::find_repos_for_workspace(pool, workspace.id).await?;
+        let repo_states =
+            ExecutionProcessRepoState::find_by_execution_process_id(pool, target_process_id)
+                .await?;
+
+        let container_ref = self.ensure_container_exists(&workspace).await?;
+        let workspace_dir = std::path::PathBuf::from(container_ref);
+        let is_dirty = self
+            .is_container_clean(&workspace)
+            .await
+            .map(|is_clean| !is_clean)
+            .unwrap_or(false);
+
+        for repo in &repos {
+            let repo_state = repo_states.iter().find(|s| s.repo_id == repo.id);
+            let target_oid = match repo_state.and_then(|s| s.before_head_commit.clone()) {
+                Some(oid) => Some(oid),
+                None => {
+                    ExecutionProcess::find_prev_after_head_commit(
+                        pool,
+                        session_id,
+                        target_process_id,
+                        repo.id,
+                    )
+                    .await?
+                }
+            };
+
+            let worktree_path = workspace_dir.join(&repo.name);
+            if let Some(oid) = target_oid {
+                self.git().reconcile_worktree_to_commit(
+                    &worktree_path,
+                    &oid,
+                    git::WorktreeResetOptions::new(
+                        perform_git_reset,
+                        force_when_dirty,
+                        is_dirty,
+                        perform_git_reset,
+                    ),
+                );
+            }
+        }
+
+        self.try_stop(&workspace, false).await;
+        ExecutionProcess::drop_at_and_after(pool, session_id, target_process_id).await?;
+
+        Ok(())
     }
 
     async fn try_stop(&self, workspace: &Workspace, include_dev_server: bool) {
@@ -846,6 +1095,22 @@ pub trait ContainerService {
                                 );
                             }
                         }
+                        LogMsg::MessageId(agent_message_id) => {
+                            if let Err(e) = CodingAgentTurn::update_agent_message_id(
+                                &db.pool,
+                                execution_id,
+                                agent_message_id,
+                            )
+                            .await
+                            {
+                                tracing::error!(
+                                    "Failed to update agent_message_id {} for execution process {}: {}",
+                                    agent_message_id,
+                                    execution_id,
+                                    e
+                                );
+                            }
+                        }
                         LogMsg::Finished => {
                             break;
                         }
@@ -1020,8 +1285,9 @@ pub trait ContainerService {
             &repo_states,
         )
         .await?;
-
-        Workspace::set_archived(&self.db().pool, workspace.id, false).await?;
+        if *run_reason != ExecutionProcessRunReason::ArchiveScript {
+            Workspace::set_archived(&self.db().pool, workspace.id, false).await?;
+        }
 
         if let Some(prompt) = match executor_action.typ() {
             ExecutorActionType::CodingAgentInitialRequest(coding_agent_request) => {
@@ -1132,7 +1398,9 @@ pub trait ContainerService {
             }
         }
 
-        self.spawn_stream_raw_logs_to_db(&execution_process.id);
+        let db_stream_handle = self.spawn_stream_raw_logs_to_db(&execution_process.id);
+        self.store_db_stream_handle(execution_process.id, db_stream_handle)
+            .await;
         Ok(execution_process)
     }
 

@@ -1,5 +1,5 @@
 # Rust
-/target
+target/
 **/*.rs.bk
 
 # Node.js
@@ -86,3 +86,4 @@ vkm-cloud/
 
 .jj
 crates/db/prepare_db.sqlite
+.sisyphus/

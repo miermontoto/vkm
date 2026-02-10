@@ -14,7 +14,8 @@
     "close": "關閉",
     "replay": "重播",
     "discard": "放棄",
-    "addItem": "新增項目"
+    "addItem": "新增項目",
+    "reply": "回覆"
   },
   "form": {
     "notSpecified": "未指定",
@@ -48,6 +49,7 @@
     "taskCompleted": "任務完成",
     "ran": "執行了",
     "tool": "工具",
+    "thinking": "思考中",
     "toolSummary": {
       "read": "讀取 {{path}}",
       "searched": "搜尋 \"{{query}}\"",
@@ -56,7 +58,10 @@
       "createdTask": "建立任務：{{description}}",
       "todoOperation": "{{operation}} 待辦事項"
     },
-    "fixScript": "修復腳本"
+    "fixScript": "修復腳本",
+    "subagent": {
+      "defaultType": "子代理"
+    }
   },
   "folderPicker": {
     "legend": "點擊資料夾名稱進行導覽 • 使用操作按鈕進行選擇",
@@ -91,8 +96,15 @@
     "menuItem": "組織",
     "loadingPlaceholder": "載入組織中...",
     "selectPlaceholder": "選擇組織",
-    "currentBadge": "（目前）"
+    "currentBadge": "（目前）",
+    "organizations": "組織",
+    "createOrganization": "建立組織",
+    "orgSettings": "組織設定",
+    "migrate": "遷移"
   },
+  "ok": "確定",
+  "error": "錯誤",
+  "signIn": "登入",
   "signOut": "登出",
   "devMode": {
     "banner": "開發模式 - 這是開發版本"
@@ -196,7 +208,9 @@
   "commandBar": {
     "noResults": "找不到結果。",
     "back": "返回",
-    "defaultPlaceholder": "輸入命令或搜尋..."
+    "defaultPlaceholder": "輸入命令或搜尋...",
+    "selectBranch": "Select Branch",
+    "selectBranchFor": "Select Branch for {{repoName}}"
   },
   "chatBox": {
     "variants": "變體",
@@ -236,7 +250,64 @@
     "tags": "標籤",
     "files": "檔案",
     "commands": "指令",
+    "chooseRepo": "選擇儲存庫",
+    "selectedRepo": "已選擇儲存庫：{{repoName}}",
+    "missingRepo": "所選儲存庫已無法使用。",
     "noTagsOrFiles": "找不到標籤或檔案",
     "noCommands": "此代理沒有可用的指令。"
+  },
+  "kanban": {
+    "noStatusesFound": "找不到此專案的狀態",
+    "noVisibleStatuses": "所有狀態已隱藏。請使用顯示設定或切換到其他標籤頁查看問題。",
+    "noProjectFound": "找不到專案",
+    "noOrganizationFound": "找不到組織",
+    "unassigned": "未指派",
+    "noTagsAvailable": "無可用標籤",
+    "createNewIssue": "建立新問題",
+    "createNewTag": "建立新標籤",
+    "searchTags": "搜尋標籤...",
+    "selectColorFor": "選擇顏色：",
+    "createTag": "建立",
+    "filesCount": "{{count}} 個檔案",
+    "noPrCreated": "未建立 PR",
+    "noCommentsYet": "尚無評論",
+    "createdBy": "建立者",
+    "comments": "評論",
+    "enterCommentPlaceholder": "在此輸入評論...",
+    "subIssues": "子任務",
+    "noSubIssues": "無子任務",
+    "markIndependentIssue": "標記為獨立問題",
+    "parentIssue": "父級",
+    "subIssueIndicator": "↳",
+    "showSubIssues": "顯示子任務",
+    "viewTabs": {
+      "active": "活動",
+      "all": "全部"
+    },
+    "loginRequired": {
+      "title": "需要登入",
+      "description": "請登入以查看此專案。",
+      "action": "登入"
+    }
+  },
+  "createMode": {
+    "headings": {
+      "repoStep": "你想在哪些儲存庫上工作？",
+      "chatStep": "你想做什麼工作？"
+    },
+    "repoPicker": {
+      "actions": {
+        "recent": "最近",
+        "browse": "瀏覽",
+        "create": "建立"
+      }
+    }
+  },
+  "syncError": {
+    "networkErrors": "網路錯誤",
+    "streamsAffected": "{{count}} 個資料流受影響",
+    "streamsAffected_other": "{{count}} 個資料流受影響",
+    "status": "(狀態 {{status}})",
+    "refreshPage": "重新整理頁面"
   }
 }
